@@ -6,9 +6,11 @@ import {
   filterThemeMenu,
   computeThemeCartSummary,
   nextTicketStatus,
-} from './themeCatalogData.ts';
+  updateDishInMenu,
+  addDishToMenu,
+} from './themeCatalogData';
 
-test('PRODUCT_THEMES defines all 4 distinct themes with complete menus and palettes', () => {
+test('PRODUCT_THEMES defines all 4 distinct themes with complete menus, imageUrls, and palettes', () => {
   assert.equal(PRODUCT_THEMES.length, 4);
   const ids = PRODUCT_THEMES.map((t) => t.id);
   assert.deepEqual(ids, [
@@ -21,6 +23,9 @@ test('PRODUCT_THEMES defines all 4 distinct themes with complete menus and palet
   for (const theme of PRODUCT_THEMES) {
     assert.ok(theme.menu.length >= 6, `${theme.id} should have at least 6 dishes`);
     assert.ok(theme.categories.includes('All'));
+    for (const dish of theme.menu) {
+      assert.ok(dish.imageUrl && dish.imageUrl.length > 0, `${dish.id} must have an imageUrl placeholder`);
+    }
   }
 });
 
@@ -31,7 +36,7 @@ test('filterThemeMenu filters accurately by category and search query', () => {
 
   const searchMatch = filterThemeMenu(street.menu, 'All', 'jalapeño');
   assert.equal(searchMatch.length, 1);
-  assert.equal(searchMatch[0].id, 'st-2');
+  assert.equal(searchMatch[0].id, 'ss-2');
 });
 
 test('computeThemeCartSummary calculates item quantities and subtotal accurately and skips soldOut items', () => {
@@ -60,4 +65,32 @@ test('nextTicketStatus advances ticket lifecycle deterministically', () => {
   assert.equal(nextTicketStatus('cooking'), 'ready');
   assert.equal(nextTicketStatus('ready'), 'served');
   assert.equal(nextTicketStatus('served'), 'served');
+});
+
+test('updateDishInMenu and addDishToMenu update prices, photos, and add new dishes cleanly', () => {
+  const elegant = getThemeById('classy-elegant');
+  const updated = updateDishInMenu(elegant.menu, 'ce-1', {
+    price: 22.5,
+    imageUrl: 'https://example.com/burrata.jpg',
+  });
+  const burrata = updated.find((d) => d.id === 'ce-1');
+  assert.equal(burrata?.price, 22.5);
+  assert.equal(burrata?.imageUrl, 'https://example.com/burrata.jpg');
+
+  const withNewDish = addDishToMenu(
+    updated,
+    {
+      name: 'Lobster Bisque',
+      category: 'Small Plates',
+      price: 19.0,
+      description: 'Cognac cream and tarragon oil.',
+      imageUrl: '',
+      prepMinutes: 9,
+    },
+    elegant
+  );
+  assert.equal(withNewDish.length, elegant.menu.length + 1);
+  assert.equal(withNewDish[0].name, 'Lobster Bisque');
+  assert.equal(withNewDish[0].price, 19.0);
+  assert.ok(withNewDish[0].imageUrl.startsWith('data:image/svg+xml'));
 });

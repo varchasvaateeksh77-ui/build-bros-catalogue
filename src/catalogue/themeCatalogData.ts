@@ -12,6 +12,7 @@ export interface ThemeMenuItem {
   category: string;
   price: number;
   description: string;
+  imageUrl: string;
   tag?: string;
   soldOut?: boolean;
   prepMinutes: number;
@@ -53,10 +54,11 @@ export interface ProductThemeConfig {
 export interface LiveOrderTicket {
   ticketNumber: string;
   tableNumber: number;
-  items: { id: string; name: string; qty: number; price: number; note?: string }[];
+  items: { id: string; name: string; qty: number; price: number; note?: string; imageUrl?: string }[];
   total: number;
   status: 'incoming' | 'confirmed' | 'cooking' | 'ready' | 'served';
   createdAt: string;
+  source?: 'guest-direct' | 'waiter-confirmed';
 }
 
 export interface LiveWaiterCall {
@@ -64,9 +66,41 @@ export interface LiveWaiterCall {
   tableNumber: number;
   cartCount: number;
   cartTotal: number;
+  cartItems: { id: string; name: string; qty: number; price: number }[];
+  note?: string;
   reason: 'Order ready in cart' | 'Question for waiter' | 'Bill requested';
-  status: 'calling' | 'walking' | 'assisted';
+  status: 'calling' | 'walking' | 'confirmed' | 'assisted';
   createdAt: string;
+}
+
+/**
+ * Generates a deterministic, appetizing SVG data-URI dish photo placeholder
+ * whenever a custom photo hasn't been uploaded yet, so every dish card in the
+ * Swipe Deck has an immediate visual dish plate illustration + photo frame.
+ */
+export function createDishPhotoPlaceholder(
+  dishName: string,
+  category: string,
+  bgHex: string,
+  plateHex: string,
+  accentHex: string,
+  textHex: string
+): string {
+  const safeTitle = dishName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const safeCat = category.toUpperCase().replace(/&/g, '&amp;');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" width="800" height="560">
+    <rect width="800" height="560" fill="${bgHex}"/>
+    <circle cx="400" cy="255" r="175" fill="${plateHex}" stroke="${accentHex}" stroke-width="2" stroke-opacity="0.45"/>
+    <circle cx="400" cy="255" r="132" fill="none" stroke="${accentHex}" stroke-width="1.5" stroke-dasharray="6 6" stroke-opacity="0.4"/>
+    <circle cx="365" cy="235" r="46" fill="${accentHex}" fill-opacity="0.22"/>
+    <circle cx="438" cy="268" r="34" fill="${accentHex}" fill-opacity="0.34"/>
+    <circle cx="395" cy="285" r="22" fill="${textHex}" fill-opacity="0.18"/>
+    <rect x="30" y="28" width="220" height="34" rx="8" fill="${plateHex}" stroke="${accentHex}" stroke-width="1" stroke-opacity="0.35"/>
+    <text x="46" y="50" fill="${accentHex}" font-family="monospace" font-size="13" font-weight="600" letter-spacing="2">${safeCat}</text>
+    <text x="400" y="485" text-anchor="middle" fill="${textHex}" font-family="sans-serif" font-size="24" font-weight="700">${safeTitle}</text>
+    <text x="400" y="516" text-anchor="middle" fill="${accentHex}" font-family="monospace" font-size="12" letter-spacing="2">DISH PHOTO PLACEHOLDER · REPLACE IN ADMIN</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
 export const PRODUCT_THEMES: ProductThemeConfig[] = [
@@ -107,6 +141,7 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         price: 18.0,
         description:
           'Pugliese creamy burrata, shaved black Périgord truffle, aged Modena balsamic, grilled sourdough.',
+        imageUrl: createDishPhotoPlaceholder('Truffle & Heirloom Burrata', 'Small Plates', '#15100D', '#211914', '#C89D54', '#F5EFE6'),
         tag: "Chef's Signature",
         prepMinutes: 8,
       },
@@ -117,6 +152,7 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         price: 24.0,
         description:
           'A5 Miyazaki tenderloin, confit egg yolk, caperberry, shallot, toasted brioche soldiers.',
+        imageUrl: createDishPhotoPlaceholder('Hand-Cut Wagyu Tartare', 'Small Plates', '#15100D', '#211914', '#C89D54', '#F5EFE6'),
         prepMinutes: 10,
       },
       {
@@ -125,36 +161,40 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         category: 'Mains',
         price: 34.0,
         description:
-          'Slow-rendered Gascony duck leg, velvety pomme purée, charred baby carrots, sour cherry jus.',
-        tag: 'House Classic',
+          'Slow-rendered Gascogne duck leg, charred orange reduction, parsnip silk, wild chanterelles.',
+        imageUrl: createDishPhotoPlaceholder('36-Hour Crispy Duck Confit', 'Mains', '#15100D', '#211914', '#C89D54', '#F5EFE6'),
+        tag: 'Most Ordered',
         prepMinutes: 16,
       },
       {
         id: 'ce-4',
-        name: 'Saffron & Bone Marrow Risotto',
+        name: 'Pan-Seared Hokkaido Scallops',
         category: 'Mains',
-        price: 31.0,
+        price: 32.0,
         description:
-          'Acquerello carnaroli rice, roasted veal marrow, 24-month Parmigiano Reggiano, gremolata.',
-        prepMinutes: 18,
+          'Diver scallops, saffron champagne velouté, crispy pancetta, sea fennel.',
+        imageUrl: createDishPhotoPlaceholder('Pan-Seared Hokkaido Scallops', 'Mains', '#15100D', '#211914', '#C89D54', '#F5EFE6'),
+        prepMinutes: 14,
       },
       {
         id: 'ce-5',
-        name: 'Barolo DOCG Nebbiolo (Glass)',
+        name: 'Smoked Rosemary Negroni',
         category: 'Cellar & Cocktails',
-        price: 19.0,
+        price: 16.0,
         description:
-          'Piedmont 2019 vintage. Aromas of dried rose petal, wild cherry, and warm spice.',
-        prepMinutes: 3,
+          'Artisanal botanical gin, Carpano Antica vermouth, Campari, torched rosemary sprig.',
+        imageUrl: createDishPhotoPlaceholder('Smoked Rosemary Negroni', 'Cellar & Cocktails', '#15100D', '#211914', '#C89D54', '#F5EFE6'),
+        prepMinutes: 4,
       },
       {
         id: 'ce-6',
-        name: 'Valrhona 70% Cacao & Hazelnut Tart',
+        name: '70% Guanaja Chocolate Soufflé',
         category: 'Dessert',
         price: 15.0,
         description:
-          'Warm dark chocolate ganache, Piedmontese roasted hazelnut praline, flaky Maldon sea salt.',
-        prepMinutes: 7,
+          'Baked to order dark Valrhona chocolate soufflé with Madagascar vanilla bean crème anglaise.',
+        imageUrl: createDishPhotoPlaceholder('70% Guanaja Chocolate Soufflé', 'Dessert', '#15100D', '#211914', '#C89D54', '#F5EFE6'),
+        prepMinutes: 15,
       },
     ],
   },
@@ -179,12 +219,12 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
       surface: '#FFFFFF',
       elevated: '#F2EFE9',
       text: '#141413',
-      muted: '#686662',
+      muted: '#6E6A63',
       accent: '#1E3F2B',
       accentText: '#FAF9F5',
-      border: '#E2DDD5',
-      floorGround: '#181816',
-      floorTable: '#302E2A',
+      border: 'rgba(20, 20, 19, 0.11)',
+      floorGround: '#EFECE6',
+      floorTable: '#D8D2C5',
     },
     categories: ['All', 'Filter & Espresso', 'Bakery', 'Tartines', 'Botanical'],
     menu: [
@@ -194,7 +234,8 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         category: 'Filter & Espresso',
         price: 6.5,
         description:
-          'Washed Boquete high-altitude lot. Delicate notes of jasmine blossom, bergamot, and white peach.',
+          'Washed Boquete lot. Jasmine blossom, bergamot, and white peach notes brewed at 93°C.',
+        imageUrl: createDishPhotoPlaceholder('Panama Geisha V60 Pour Over', 'Filter & Espresso', '#F2EFE9', '#FFFFFF', '#1E3F2B', '#141413'),
         tag: 'Single Origin',
         prepMinutes: 5,
       },
@@ -204,7 +245,8 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         category: 'Filter & Espresso',
         price: 4.5,
         description:
-          'Double ristretto of our seasonal Nordic light-medium espresso with silky micro-foamed oat.',
+          'Double ristretto of Ethiopian heirloom espresso over micro-textured barista oat milk.',
+        imageUrl: createDishPhotoPlaceholder('Oat Milk Flat White', 'Filter & Espresso', '#F2EFE9', '#FFFFFF', '#1E3F2B', '#141413'),
         prepMinutes: 3,
       },
       {
@@ -213,35 +255,39 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         category: 'Bakery',
         price: 5.2,
         description:
-          'Hand-braided laminated brioche, freshly mortared green cardamom pods, raw cane glaze.',
+          'Laminated organic wheat dough twisted with freshly mortared green cardamom and pearl sugar.',
+        imageUrl: createDishPhotoPlaceholder('Brown Butter Cardamom Knot', 'Bakery', '#F2EFE9', '#FFFFFF', '#1E3F2B', '#141413'),
         tag: 'Warm from Oven',
         prepMinutes: 2,
       },
       {
         id: 'mn-4',
-        name: 'Whipped Ricotta & Black Fig Tartine',
+        name: 'Whipped Ricotta & Fig Tartine',
         category: 'Tartines',
-        price: 11.5,
+        price: 12.0,
         description:
-          '36-hour country levain sourdough, lemon-thyme whipped ricotta, mission figs, raw heather honey.',
-        prepMinutes: 8,
+          '36-hour country sourdough, lemon-thyme sheep ricotta, black mission figs, raw heather honey.',
+        imageUrl: createDishPhotoPlaceholder('Whipped Ricotta & Fig Tartine', 'Tartines', '#F2EFE9', '#FFFFFF', '#1E3F2B', '#141413'),
+        prepMinutes: 7,
       },
       {
         id: 'mn-5',
-        name: 'Avocado & Soft Egg Smørrebrød',
+        name: 'Avocado & Pickled Kohlrabi Toast',
         category: 'Tartines',
-        price: 13.0,
+        price: 13.5,
         description:
-          'Dense seeded Danish rye,6-minute pasture egg, pickled red shallot, cold-pressed dill oil.',
-        prepMinutes: 9,
+          'Seeded rye levain, smashed Hass avocado, crisp kohlrabi ribbons, toasted furikake, dill oil.',
+        imageUrl: createDishPhotoPlaceholder('Avocado & Pickled Kohlrabi Toast', 'Tartines', '#F2EFE9', '#FFFFFF', '#1E3F2B', '#141413'),
+        prepMinutes: 8,
       },
       {
         id: 'mn-6',
-        name: 'Ceremonial Uji Matcha Latte',
+        name: 'Uji Ceremonial Matcha Tonic',
         category: 'Botanical',
-        price: 5.8,
+        price: 6.0,
         description:
-          'First-harvest stone-milled Kyoto matcha whisked with bamboo chasen at 78°C.',
+          'First-harvest Kyoto matcha whisked to order and layered over dry botanical yuzu tonic.',
+        imageUrl: createDishPhotoPlaceholder('Uji Ceremonial Matcha Tonic', 'Botanical', '#F2EFE9', '#FFFFFF', '#1E3F2B', '#141413'),
         prepMinutes: 4,
       },
     ],
@@ -267,70 +313,76 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
       surface: '#1B1B1B',
       elevated: '#252525',
       text: '#F4F2ED',
-      muted: '#9E9B95',
+      muted: '#9E9A90',
       accent: '#FF4D00',
       accentText: '#FFFFFF',
-      border: '#323232',
+      border: 'rgba(244, 242, 237, 0.14)',
       floorGround: '#111111',
-      floorTable: '#282828',
+      floorTable: '#262626',
     },
     categories: ['All', 'Smash Burgers', 'Loaded Sides', 'Hot Chicken', 'Shakes & Cans'],
     menu: [
       {
-        id: 'st-1',
+        id: 'ss-1',
         name: 'Double Oklahoma Onion Smash',
         category: 'Smash Burgers',
         price: 11.5,
         description:
-          'Two lacy crispy-edged chuck patties smashed with paper-thin vidalia onions, double American cheese, house dill pickles, toasted potato bun.',
-        tag: 'Top Seller',
+          'Two lacy-edged aged chuck patties smashed with paper-thin sweet onions, double American cheese, house pickles, potato bun.',
+        imageUrl: createDishPhotoPlaceholder('Double Oklahoma Onion Smash', 'Smash Burgers', '#161616', '#222222', '#FF4D00', '#F4F2ED'),
+        tag: '#1 Seller',
         prepMinutes: 7,
       },
       {
-        id: 'st-2',
+        id: 'ss-2',
         name: 'Triple Jalapeño Smoke Stack',
         category: 'Smash Burgers',
         price: 14.0,
         description:
-          'Three seared smash patties, blistered pickled jalapeños, smoked cheddar, chipotle comeback sauce.',
+          'Three crispy smash patties, charred pickled jalapeños, Applewood bacon jam, chipotle mayo, pepper jack.',
+        imageUrl: createDishPhotoPlaceholder('Triple Jalapeño Smoke Stack', 'Smash Burgers', '#161616', '#222222', '#FF4D00', '#F4F2ED'),
+        tag: 'Spicy',
         prepMinutes: 8,
       },
       {
-        id: 'st-3',
+        id: 'ss-3',
         name: 'Nashville Hot Chicken Tenders (4 pc)',
         category: 'Hot Chicken',
         price: 10.5,
         description:
-          'Buttermilk-brined tenders dipped in cayenne chili oil, served over white bread with crinkle pickles.',
-        tag: 'Spicy',
+          'Buttermilk-brined jumbo tenders basted in cayenne chili oil, served on Texas toast with comeback sauce.',
+        imageUrl: createDishPhotoPlaceholder('Nashville Hot Chicken Tenders', 'Hot Chicken', '#161616', '#222222', '#FF4D00', '#F4F2ED'),
         prepMinutes: 9,
       },
       {
-        id: 'st-4',
-        name: 'Animal Style Crinkle Fries',
+        id: 'ss-4',
+        name: 'Tallow Waffle Fries · Animal Style',
         category: 'Loaded Sides',
-        price: 6.5,
+        price: 7.5,
         description:
-          'Double-fried crinkle fries drenched in melted cheddar, charred onions, and smoky Block 84 sauce.',
+          'Double-fried beef tallow waffle fries buried under melted cheddar, caramelized onions, and tangy burger sauce.',
+        imageUrl: createDishPhotoPlaceholder('Tallow Waffle Fries', 'Loaded Sides', '#161616', '#222222', '#FF4D00', '#F4F2ED'),
         prepMinutes: 5,
       },
       {
-        id: 'st-5',
-        name: 'Charred Elote Street Corn Ribs',
+        id: 'ss-5',
+        name: 'Charred Street Corn Elote Cup',
         category: 'Loaded Sides',
-        price: 7.0,
+        price: 6.0,
         description:
-          'Flash-fried sweet corn ribs tossed in tajín chili lime, cotija cheese, and cilantro crema.',
-        prepMinutes: 6,
+          'Fire-roasted sweet corn kernels tossed with lime crema, cotija cheese, tajín, and cilantro.',
+        imageUrl: createDishPhotoPlaceholder('Charred Street Corn Elote Cup', 'Loaded Sides', '#161616', '#222222', '#FF4D00', '#F4F2ED'),
+        prepMinutes: 4,
       },
       {
-        id: 'st-6',
-        name: 'Toasted Marshmallow Malt Shake',
+        id: 'ss-6',
+        name: 'Salted Pretzel & Burnt Vanilla Shake',
         category: 'Shakes & Cans',
-        price: 6.8,
+        price: 6.5,
         description:
-          'Hand-spun vanilla custard, malted milk crumb, torched campfire marshmallow fluff.',
-        prepMinutes: 4,
+          'Hand-spun custard milkshake with crushed salted pretzels and dark caramel swirl.',
+        imageUrl: createDishPhotoPlaceholder('Salted Pretzel Vanilla Shake', 'Shakes & Cans', '#161616', '#222222', '#FF4D00', '#F4F2ED'),
+        prepMinutes: 3,
       },
     ],
   },
@@ -355,12 +407,12 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
       surface: '#FFFDF9',
       elevated: '#EFE5D6',
       text: '#231811',
-      muted: '#6E5D51',
+      muted: '#7A6352',
       accent: '#C84B24',
       accentText: '#FFFDF9',
-      border: '#DFD2C0',
-      floorGround: '#1F1610',
-      floorTable: '#3B281D',
+      border: 'rgba(200, 75, 36, 0.18)',
+      floorGround: '#EDE2D0',
+      floorTable: '#B87A56',
     },
     categories: ['All', 'Wood-Fired Pizza', 'Antipasti', 'Dolci', 'Aperitivi'],
     menu: [
@@ -370,8 +422,9 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         category: 'Wood-Fired Pizza',
         price: 16.0,
         description:
-          ' crushed San Marzano D.O.P. tomatoes, Campania fior di latte, fresh basil leaves, cold-pressed olive oil, blistered at 485°C.',
-        tag: 'Vera Napoli',
+          'Crushed San Marzano tomatoes, fresh Fior di Latte, organic sweet basil, cold-pressed Tuscan olive oil.',
+        imageUrl: createDishPhotoPlaceholder('Margherita D.O.P. Sourdough', 'Wood-Fired Pizza', '#EFE5D6', '#FFFDF9', '#C84B24', '#231811'),
+        tag: '900°F Oak Oven',
         prepMinutes: 6,
       },
       {
@@ -380,7 +433,9 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         category: 'Wood-Fired Pizza',
         price: 19.5,
         description:
-          'Artisanal spicy soppressata, Calabrian chili oil, aged provolone, wildflower hot honey drizzle.',
+          'Artisanal soppressata piccante, smoked provola, crushed Calabrian chili, wildflower hot honey drizzle.',
+        imageUrl: createDishPhotoPlaceholder('Diavola & Calabrian Hot Honey', 'Wood-Fired Pizza', '#EFE5D6', '#FFFDF9', '#C84B24', '#231811'),
+        tag: 'House Favorite',
         prepMinutes: 7,
       },
       {
@@ -389,34 +444,38 @@ export const PRODUCT_THEMES: ProductThemeConfig[] = [
         category: 'Wood-Fired Pizza',
         price: 21.0,
         description:
-          '24-month Prosciutto di Parma, Pugliese stracciatella, black mission figs, wild rocket.',
+          'White Bianca base, 24-month Prosciutto di Parma, pulled Pugliese stracciatella, roasted black figs, wild arugula.',
+        imageUrl: createDishPhotoPlaceholder('Stracciatella Fig & Prosciutto', 'Wood-Fired Pizza', '#EFE5D6', '#FFFDF9', '#C84B24', '#231811'),
         prepMinutes: 7,
       },
       {
         id: 'at-4',
-        name: 'Wood-Roasted Rosemary Focaccia',
+        name: 'Wood-Roasted Nocellara Olives & Rosemary Focaccia',
         category: 'Antipasti',
         price: 9.5,
         description:
-          'Puffed sourdough focaccia brushed with garlic confit oil, sea salt, and whipped ricotta.',
-        prepMinutes: 5,
+          'Warm blistered sourdough focaccia brushed with sea salt and garlic confit oil alongside Sicilian green olives.',
+        imageUrl: createDishPhotoPlaceholder('Wood-Roasted Olives & Focaccia', 'Antipasti', '#EFE5D6', '#FFFDF9', '#C84B24', '#231811'),
+        prepMinutes: 4,
       },
       {
         id: 'at-5',
-        name: 'Pistachio di Bronte Tiramisu',
+        name: 'Bronte Pistachio Tiramisu',
         category: 'Dolci',
         price: 11.0,
         description:
-          'Espresso-soaked savoiardi layered with roasted Sicilian green pistachio mascarpone.',
+          'Espresso-soaked savoiardi layered with Sicilian pistachio mascarpone cream and crushed toasted kernels.',
+        imageUrl: createDishPhotoPlaceholder('Bronte Pistachio Tiramisu', 'Dolci', '#EFE5D6', '#FFFDF9', '#C84B24', '#231811'),
         prepMinutes: 4,
       },
       {
         id: 'at-6',
         name: 'Sicilian Blood Orange Spritz',
         category: 'Aperitivi',
-        price: 12.5,
+        price: 13.0,
         description:
-          'Amaro blood orange aperitivo, Valdobbiadene Prosecco Superiore, charred rosemary sprig.',
+          'Small-batch bitter aperitivo, organic blood orange soda, Valdobbiadene Prosecco Superiore.',
+        imageUrl: createDishPhotoPlaceholder('Sicilian Blood Orange Spritz', 'Aperitivi', '#EFE5D6', '#FFFDF9', '#C84B24', '#231811'),
         prepMinutes: 3,
       },
     ],
@@ -483,4 +542,54 @@ export function nextTicketStatus(
     case 'served':
       return 'served';
   }
+}
+
+export function updateDishInMenu(
+  menu: ThemeMenuItem[],
+  dishId: string,
+  patch: Partial<Pick<ThemeMenuItem, 'name' | 'price' | 'description' | 'imageUrl' | 'category' | 'soldOut' | 'prepMinutes'>>
+): ThemeMenuItem[] {
+  return menu.map((item) => {
+    if (item.id !== dishId) return item;
+    return {
+      ...item,
+      ...patch,
+      price:
+        typeof patch.price === 'number' && !Number.isNaN(patch.price) && patch.price >= 0
+          ? Number(patch.price.toFixed(2))
+          : item.price,
+    };
+  });
+}
+
+export function addDishToMenu(
+  menu: ThemeMenuItem[],
+  newDish: Omit<ThemeMenuItem, 'id'>,
+  theme: ProductThemeConfig
+): ThemeMenuItem[] {
+  const id = `${theme.id.slice(0, 2)}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const fallbackImage =
+    newDish.imageUrl && newDish.imageUrl.trim()
+      ? newDish.imageUrl.trim()
+      : createDishPhotoPlaceholder(
+          newDish.name.trim(),
+          newDish.category.trim() || 'Specials',
+          theme.palette.surface,
+          theme.palette.elevated,
+          theme.palette.accent,
+          theme.palette.text
+        );
+
+  const created: ThemeMenuItem = {
+    id,
+    name: newDish.name.trim(),
+    category: newDish.category.trim() || 'Specials',
+    price: Number(Math.max(0, newDish.price).toFixed(2)),
+    description: newDish.description.trim() || 'Freshly prepared in house.',
+    imageUrl: fallbackImage,
+    prepMinutes: newDish.prepMinutes || 10,
+    soldOut: Boolean(newDish.soldOut),
+  };
+
+  return [created, ...menu];
 }
