@@ -1,0 +1,101 @@
+[
+  {
+    "scene": 1,
+    "t": 0.0,
+    "duration": 3.0,
+    "level": 0,
+    "camera": "top",
+    "window": "none",
+    "caption": "8:40 pm. Saturday. Twelve tables, two staff."
+  },
+  {
+    "scene": 2,
+    "t": 3.0,
+    "duration": 3.0,
+    "level": 0,
+    "camera": "tilt-table-5",
+    "window": "none",
+    "caption": "Table five scans the code on the table."
+  },
+  {
+    "scene": 3,
+    "t": 6.0,
+    "duration": 2.5,
+    "level": 0,
+    "camera": "close-table-5",
+    "window": "phone-open",
+    "caption": "The menu opens. No app. No account."
+  },
+  {
+    "scene": 4,
+    "t": 8.5,
+    "duration": 2.5,
+    "level": 1,
+    "camera": "close-table-5",
+    "window": "phone-menu",
+    "caption": "Level 1. A menu with photos and prices on every table."
+  },
+  {
+    "scene": 5,
+    "t": 11.0,
+    "duration": 3.0,
+    "level": 2,
+    "camera": "close-table-5",
+    "window": "phone-cart",
+    "caption": "Level 2. They pick dishes into the cart."
+  },
+  {
+    "scene": 6,
+    "t": 14.0,
+    "duration": 4.0,
+    "level": 2,
+    "camera": "floor-mid",
+    "window": "phone-call-waiter",
+    "caption": "One button under the cart calls the waiter."
+  },
+  {
+    "scene": 7,
+    "t": 18.0,
+    "duration": 4.0,
+    "level": 2,
+    "camera": "floor-mid",
+    "window": "waiter-alert",
+    "caption": "The waiter gets the table number and walks over."
+  },
+  {
+    "scene": 8,
+    "t": 22.0,
+    "duration": 3.0,
+    "level": 3,
+    "camera": "close-table-5",
+    "window": "phone-order-sent",
+    "caption": "Level 3. They order from the phone."
+  },
+  {
+    "scene": 9,
+    "t": 25.0,
+    "duration": 4.0,
+    "level": 3,
+    "camera": "pan-routes",
+    "window": "reception-kitchen",
+    "caption": "It lands at reception or goes straight to the kitchen."
+  },
+  {
+    "scene": 10,
+    "t": 29.0,
+    "duration": 3.0,
+    "level": 3,
+    "camera": "wide",
+    "window": "phone-served",
+    "caption": "The kitchen cooks it. The table is served."
+  },
+  {
+    "scene": 11,
+    "t": 32.0,
+    "duration": 2.0,
+    "level": 4,
+    "camera": "wide-dim",
+    "window": "cta",
+    "caption": "Ready to make your restaurant smarter?"
+  }
+]

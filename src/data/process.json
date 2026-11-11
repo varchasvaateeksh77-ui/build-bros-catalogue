@@ -1,0 +1,32 @@
+[
+  {
+    "n": 1,
+    "tab": "Visit",
+    "title": "We visit and talk.",
+    "body": "We look at your floor, your menu and how a busy shift runs."
+  },
+  {
+    "n": 2,
+    "tab": "Menu",
+    "title": "We digitise your menu.",
+    "body": "Photos, categories, prices and notes, set up with you."
+  },
+  {
+    "n": 3,
+    "tab": "Screens",
+    "title": "We set up screens and table codes.",
+    "body": "We place a code on every table and test it in your evening lighting."
+  },
+  {
+    "n": 4,
+    "tab": "Team",
+    "title": "We train your team.",
+    "body": "We walk your staff through the floor and stay with you for your first service."
+  },
+  {
+    "n": 5,
+    "tab": "Go live",
+    "title": "You go live.",
+    "body": "Your tables start ordering and we stay on call when you need us."
+  }
+]

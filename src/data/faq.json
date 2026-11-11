@@ -1,0 +1,38 @@
+[
+  {
+    "q": "What about guests who do not use phones?",
+    "a": "Your staff can still take orders the normal way, and you can keep a printed menu at the counter. The system adds a new path. It does not remove the old one."
+  },
+  {
+    "q": "Does this replace my staff?",
+    "a": "It removes the steps spent taking orders and carrying messages between the floor and the kitchen. At Level 2 your waiters still come to the table. Most owners use that to run a shift with fewer people, or to put the same people on guests and food. That choice is yours."
+  },
+  {
+    "q": "Do guests need to download an app?",
+    "a": "No. They scan the code and the menu opens in their phone browser."
+  },
+  {
+    "q": "What does the waiter see when a guest calls?",
+    "a": "The table number, and the dishes in the cart if you choose that setup."
+  },
+  {
+    "q": "Where does a Level 3 order go?",
+    "a": "To your reception screen or straight to the kitchen, set up the way your restaurant runs."
+  },
+  {
+    "q": "What if the internet drops?",
+    "a": "Staff can always take orders by hand, and we plan a backup with you based on your connection."
+  },
+  {
+    "q": "Can I change prices and dishes myself?",
+    "a": "Yes. Changes show on every table within a minute."
+  },
+  {
+    "q": "Who owns the menu and the order data?",
+    "a": "You do."
+  },
+  {
+    "q": "What does it cost?",
+    "a": "It depends on the level, the number of tables and the size of your menu. Tell us about your place and we send a clear quote."
+  }
+]

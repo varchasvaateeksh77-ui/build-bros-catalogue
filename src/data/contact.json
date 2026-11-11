@@ -1,0 +1,18 @@
+{
+  "phones": [
+    {
+      "display": "+91 92035 66401",
+      "raw": "+919203566401",
+      "whatsapp": "919203566401",
+      "label": "WhatsApp & Call"
+    },
+    {
+      "display": "9425411807",
+      "raw": "+919425411807",
+      "whatsapp": "919425411807",
+      "label": "Direct Line"
+    }
+  ],
+  "email": "varchasvaateeksh77@gmail.com",
+  "demoMode": "We bring a working demo to your restaurant in person."
+}

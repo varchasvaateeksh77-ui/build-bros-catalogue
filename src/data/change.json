@@ -1,0 +1,30 @@
+[
+  {
+    "n": 1,
+    "pill": "Before",
+    "title": "Paper menus and shouting",
+    "body": "Staff carry menus, take orders by hand and walk each one to the kitchen.",
+    "floorState": "paper"
+  },
+  {
+    "n": 2,
+    "pill": "Step 2 of 4",
+    "title": "Level 1, A menu on every table",
+    "body": "A code on each table opens your full menu with photos and prices.",
+    "floorState": "menu"
+  },
+  {
+    "n": 3,
+    "pill": "Step 3 of 4",
+    "title": "Level 2, One button calls the waiter",
+    "body": "Guests fill the cart and tap the button below it. The waiter is notified with the table number and comes over.",
+    "floorState": "waiter"
+  },
+  {
+    "n": 4,
+    "pill": "Step 4 of 4",
+    "title": "Level 3, The order goes straight in",
+    "body": "Guests order from the phone. Reception or the kitchen gets it with the table number. It is made and served.",
+    "floorState": "order"
+  }
+]

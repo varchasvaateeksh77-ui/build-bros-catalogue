@@ -1,0 +1,14 @@
+[
+  { "n": 1, "text": "A menu on every table", "level": 1, "axes": { "wdth": 125, "slnt": 0, "wght": 500 } },
+  { "n": 2, "text": "Photos and prices", "level": 1, "axes": { "wdth": 100, "slnt": 0, "wght": 700 } },
+  { "n": 3, "text": "Browse by category", "level": 1, "axes": { "wdth": 75, "slnt": 0, "wght": 800 } },
+  { "n": 4, "text": "Change a price in a minute", "level": 1, "axes": { "wdth": 100, "slnt": -10, "wght": 600 } },
+  { "n": 5, "text": "Pick dishes into a cart", "level": 2, "axes": { "wdth": 140, "slnt": 0, "wght": 400 } },
+  { "n": 6, "text": "A button below the cart calls the waiter", "level": 2, "axes": { "wdth": 90, "slnt": 0, "wght": 700 } },
+  { "n": 7, "text": "The waiter sees your table number", "level": 2, "axes": { "wdth": 110, "slnt": -8, "wght": 500 } },
+  { "n": 8, "text": "The waiter comes and takes the order", "level": 2, "axes": { "wdth": 70, "slnt": 0, "wght": 800 } },
+  { "n": 9, "text": "Order straight from the phone", "level": 3, "axes": { "wdth": 130, "slnt": 0, "wght": 600 } },
+  { "n": 10, "text": "It lands at reception or in the kitchen", "level": 3, "axes": { "wdth": 100, "slnt": 0, "wght": 900 } },
+  { "n": 11, "text": "The kitchen marks it ready", "level": 3, "axes": { "wdth": 85, "slnt": -10, "wght": 500 } },
+  { "n": 12, "text": "It is served and the phone shows its status", "level": 3, "axes": { "wdth": 120, "slnt": 0, "wght": 700 } }
+]

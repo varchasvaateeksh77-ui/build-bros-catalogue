@@ -1,0 +1,6 @@
+{
+  "name": "Build Bros: digital ordering for cafes and restaurants",
+  "description": "We build table ordering, reception and kitchen screens for local cafes and restaurants. See it work, then get your restaurant set up.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

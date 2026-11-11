@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Build Bros — Instagram 9:16 Reels /brag Launch Video (1080x1920 @ 30fps)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@500;600;700&family=Google+Sans+Flex:opsz,wdth,wght,slnt@8..144,75..135,400..900,-10..0&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: #140905;
+      font-family: "Google Sans Flex", system-ui, -apple-system, sans-serif;
+      color: #FBEFE6;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+    .mono {
+      font-family: "Google Sans Code", monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Persistent 3D WebGL Viewport Layer */
+    #webgl-container {
+      position: absolute;
+      left: 44px;
+      right: 44px;
+      top: 156px;
+      height: 760px;
+      border-radius: 40px;
+      overflow: hidden;
+      border: 3px solid rgba(251, 239, 230, 0.16);
+      background: #140905;
+      z-index: 5;
+      transform-origin: center center;
+    }
+    #webgl-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+    /* Top Reels Safe-Zone Brand Header */
+    #top-header {
+      position: absolute;
+      top: 52px;
+      left: 48px;
+      right: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 50;
+    }
+    .brand-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(26, 12, 6, 0.92);
+      border: 2px solid rgba(251, 239, 230, 0.18);
+      padding: 12px 24px 12px 14px;
+      border-radius: 999px;
+    }
+    .bb-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: #E8500C;
+      color: #FBEFE6;
+      font-weight: 800;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #2A180D;
+      border: 2px solid #E8500C;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #FBEFE6;
+    }
+    .pulse-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #C4F042;
+    }
+    /* 3D HUD Overlay Badges inside WebGL stage */
+    .stage-hud-top {
+      position: absolute;
+      top: 24px;
+      left: 26px;
+      right: 26px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 20;
+    }
+    .hud-tag {
+      background: rgba(20, 9, 5, 0.88);
+      border: 1.5px solid rgba(251, 239, 230, 0.22);
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #FBEFE6;
+    }
+    /* Lower Kinetic Deck (y: 950..1860) */
+    #lower-deck {
+      position: absolute;
+      left: 44px;
+      right: 44px;
+      top: 944px;
+      bottom: 56px;
+      z-index: 25;
+      perspective: 1200px;
+    }
+    .deck-panel {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card-light {
+      background: #FFFFFF;
+      color: #1A0C06;
+      border: 3px solid #E3D9D3;
+      border-radius: 36px;
+      padding: 34px;
+    }
+    .card-dark {
+      background: #1A0C06;
+      color: #FBEFE6;
+      border: 3px solid rgba(251, 239, 230, 0.16);
+      border-radius: 36px;
+      padding: 34px;
+    }
+    .demo-badge {
+      background: #FFEEE3;
+      color: #C03E0A;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 10px;
+    }
+    /* Animated Touch Cursor + Ripple */
+    #touch-cursor {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      margin-left: -32px;
+      margin-top: -32px;
+      border-radius: 50%;
+      background: rgba(232, 80, 12, 0.32);
+      border: 4px solid #E8500C;
+      z-index: 90;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #touch-cursor-core {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #FBEFE6;
+    }
+    #touch-ripple {
+      position: absolute;
+      inset: -16px;
+      border-radius: 50%;
+      border: 4px solid #E8500C;
+      opacity: 0;
+    }
+    /* Diagonal whip transition overlay */
+    #whip-bar {
+      position: absolute;
+      inset: 0;
+      background: #E8500C;
+      z-index: 85;
+      pointer-events: none;
+      clip-path: inset(100% 0% 0% 0%);
+    }
+    /* Scene 3 Capability Wheel Overlay */
+    #wheel-overlay {
+      position: absolute;
+      left: 44px;
+      right: 44px;
+      top: 156px;
+      bottom: 56px;
+      background: #F7F2ED;
+      color: #1A0C06;
+      border-radius: 40px;
+      border: 3px solid #E3D9D3;
+      z-index: 40;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 44px;
+      overflow: hidden;
+    }
+    /* Scene 5 Full-Bleed Closing Flip */
+    #closing-flip {
+      position: absolute;
+      inset: 0;
+      z-index: 95;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Persistent Reels Header -->
+  <div id="top-header">
+    <div class="brand-chip">
+      <div class="bb-icon">BB</div>
+      <span style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">Build Bros</span>
+      <span class="mono" style="font-size: 16px; color: #FBA877; font-weight: 700;">DEMO · TABLE 5</span>
+    </div>
+    <div class="live-pill">
+      <span class="pulse-dot" id="header-dot"></span>
+      <span class="mono" id="header-status">8:40 PM · SHIFT</span>
+    </div>
+  </div>
+
+  <!-- 3D Architectural Cafe Stage -->
+  <div id="webgl-container">
+    <div class="stage-hud-top">
+      <div class="hud-tag mono" id="hud-cam-label">3D FLOOR · 12 TABLES</div>
+      <div class="hud-tag mono" id="hud-table-status" style="border-color: #E8500C; color: #FBA877;">TABLE 5 · ACTIVE</div>
+    </div>
+  </div>
+
+  <!-- Lower Kinetic Deck for Scenes 1, 2, 3B, 4 -->
+  <div id="lower-deck">
+    <!-- DECK 1: HOOK (0.00 - 3.55s) -->
+    <div class="deck-panel" id="deck-1">
+      <div class="card-dark" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 48px;">
+        <div>
+          <div class="mono" id="d1-kicker" style="color: #E8500C; font-size: 24px; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 20px;">
+            SATURDAY NIGHT RUSH
+          </div>
+          <div style="font-size: 88px; font-weight: 800; line-height: 0.98; letter-spacing: -0.04em; margin-bottom: 28px;">
+            <div id="d1-line1">Twelve tables.</div>
+            <div id="d1-line2" style="color: #E8500C;">Two staff.</div>
+          </div>
+          <p id="d1-sub" style="font-size: 32px; line-height: 1.36; color: rgba(251, 239, 230, 0.8);">
+            Guests scan the table code, browse, call a waiter or order straight to your kitchen.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
+          <div style="background: #2A180D; border: 2px solid rgba(251,239,230,0.14); border-radius: 24px; padding: 22px;">
+            <div class="mono" style="font-size: 18px; color: #FBA877; margin-bottom: 6px;">LEVEL 1</div>
+            <div style="font-size: 24px; font-weight: 700;">Table Menu</div>
+          </div>
+          <div style="background: #2A180D; border: 2px solid rgba(251,239,230,0.14); border-radius: 24px; padding: 22px;">
+            <div class="mono" style="font-size: 18px; color: #FBA877; margin-bottom: 6px;">LEVEL 2</div>
+            <div style="font-size: 24px; font-weight: 700;">Waiter Call</div>
+          </div>
+          <div style="background: #E8500C; border: 2px solid #FBEFE6; border-radius: 24px; padding: 22px;">
+            <div class="mono" style="font-size: 18px; color: #FBEFE6; margin-bottom: 6px;">LEVEL 3</div>
+            <div style="font-size: 24px; font-weight: 800;">Full Order</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DECK 2: LEVEL 1 DIGITAL MENU ON TABLE 5 (3.55 - 7.79s) -->
+    <div class="deck-panel" id="deck-2">
+      <div id="d2-phone" class="card-light" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 22px; border-bottom: 2px solid #E3D9D3; margin-bottom: 22px;">
+            <div>
+              <div class="mono" style="font-size: 18px; font-weight: 700; color: #C03E0A; margin-bottom: 4px;">LEVEL 1 · DIGITAL MENU</div>
+              <div style="font-size: 42px; font-weight: 800; letter-spacing: -0.03em; color: #1A0C06;">Menu · Table 5</div>
+            </div>
+            <div style="text-align: right;">
+              <span class="demo-badge mono">DEMO</span>
+              <div class="mono" style="font-size: 16px; color: #6C625C; margin-top: 8px;">No app · Opens in browser</div>
+            </div>
+          </div>
+
+          <!-- Interactive Category Bar -->
+          <div style="display: flex; gap: 14px; margin-bottom: 24px;">
+            <div id="cat-all" style="padding: 12px 28px; border-radius: 999px; font-size: 22px; font-weight: 700; background: #1A0C06; color: #FBEFE6;">All</div>
+            <div id="cat-coffee" style="padding: 12px 28px; border-radius: 999px; font-size: 22px; font-weight: 700; background: #F3ECE5; color: #6C625C;">Coffee</div>
+            <div id="cat-food" style="padding: 12px 28px; border-radius: 999px; font-size: 22px; font-weight: 700; background: #F3ECE5; color: #6C625C;">Food</div>
+            <div style="margin-left: auto; align-self: center;" class="mono">
+              <span id="d2-price-edit" style="background: #FFEEE3; color: #C03E0A; padding: 10px 18px; border-radius: 12px; font-size: 18px; font-weight: 700;">Instant price updates</span>
+            </div>
+          </div>
+
+          <!-- Staggered Dish Cards -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div id="dish-1" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-radius: 24px; border: 2px solid #E3D9D3; background: #FAF6F2;">
+              <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: #F3ECE5; border: 3px solid #E3D9D3; display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 34px; height: 34px; border-radius: 50%; background: #C87D4B;"></div>
+                </div>
+                <div>
+                  <div style="font-size: 28px; font-weight: 700;">Flat white</div>
+                  <div class="mono" style="font-size: 22px; color: #6C625C;">3.50</div>
+                </div>
+              </div>
+              <div id="dish-1-btn" class="mono" style="background: #E8500C; color: #FBEFE6; padding: 12px 24px; border-radius: 16px; font-size: 22px; font-weight: 700;">+ Add</div>
+            </div>
+
+            <div id="dish-2" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-radius: 24px; border: 2px solid #E3D9D3; background: #FAF6F2;">
+              <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: #F3ECE5; border: 3px solid #E3D9D3; display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 34px; height: 34px; border-radius: 50%; background: #7B3414;"></div>
+                </div>
+                <div>
+                  <div style="font-size: 28px; font-weight: 700;">Smash burger</div>
+                  <div class="mono" style="font-size: 22px; color: #6C625C;">9.50</div>
+                </div>
+              </div>
+              <div id="dish-2-btn" class="mono" style="background: #1A0C06; color: #FBEFE6; padding: 12px 24px; border-radius: 16px; font-size: 22px; font-weight: 700;">+ Add</div>
+            </div>
+
+            <div id="dish-3" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-radius: 24px; border: 2px solid #E3D9D3; background: #FAF6F2;">
+              <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: #F3ECE5; border: 3px solid #E3D9D3; display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 34px; height: 34px; border-radius: 50%; background: #D97925;"></div>
+                </div>
+                <div>
+                  <div style="font-size: 28px; font-weight: 700;">Iced latte</div>
+                  <div class="mono" style="font-size: 22px; color: #6C625C;">3.80</div>
+                </div>
+              </div>
+              <div class="mono" style="background: #F3ECE5; color: #1A0C06; padding: 12px 24px; border-radius: 16px; font-size: 22px; font-weight: 700;">+ Add</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 18px; border-top: 2px solid #E3D9D3; font-size: 22px; font-weight: 600; color: #6C625C;">
+          <span>Scan table QR → Menu opens in 0.4s</span>
+          <span class="mono" style="color: #C03E0A; font-weight: 700;">Zero menu reprints</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DECK 3B: LEVEL 2 WAITER CALL (9.10 - 11.80s) -->
+    <div class="deck-panel" id="deck-3">
+      <div class="card-light" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+              <div class="mono" style="font-size: 18px; font-weight: 700; color: #C03E0A;">LEVEL 2 · MENU + WAITER CALL</div>
+              <div style="font-size: 40px; font-weight: 800; color: #1A0C06;">One tap calls the waiter.</div>
+            </div>
+            <span class="demo-badge mono">TABLE 5</span>
+          </div>
+
+          <!-- Cart Summary -->
+          <div style="background: #FAF6F2; border: 2px solid #E3D9D3; border-radius: 26px; padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; font-size: 26px; font-weight: 600; margin-bottom: 12px;">
+              <span>2× Flat white + 1× Smash burger</span>
+              <span class="mono" id="d3-cart-total" style="font-weight: 800; color: #E8500C;">16.50</span>
+            </div>
+            <div id="d3-call-btn" style="background: #E8500C; color: #FBEFE6; text-align: center; padding: 24px; border-radius: 20px; font-size: 30px; font-weight: 800; transform-origin: center;">
+              Call waiter to Table 5
+            </div>
+          </div>
+        </div>
+
+        <!-- Waiter Live Notification Card -->
+        <div id="d3-waiter-toast" style="background: #1A0C06; color: #FBEFE6; border: 3px solid #E8500C; border-radius: 28px; padding: 28px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div class="mono" style="font-size: 18px; color: #C4F042; font-weight: 700; margin-bottom: 6px;">● WAITER PHONE ALERT</div>
+            <div style="font-size: 36px; font-weight: 800;">Table 5 · Needs you now</div>
+            <div style="font-size: 22px; color: rgba(251,239,230,0.75); margin-top: 4px;">Waiter walks straight from counter to Table 5</div>
+          </div>
+          <div class="mono" style="background: #E8500C; color: #FBEFE6; padding: 16px 24px; border-radius: 18px; font-size: 24px; font-weight: 800;">
+            ON WAY
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DECK 4: LEVEL 3 LIVE 3-WINDOW CASCADE (11.80 - 16.38s) -->
+    <div class="deck-panel" id="deck-4">
+      <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 18px;">
+        <!-- Window 1: Guest Phone -->
+        <div id="d4-card-1" class="card-light" style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div class="mono" style="font-size: 16px; font-weight: 700; color: #C03E0A;">1. GUEST PHONE · TABLE 5</div>
+            <div style="font-size: 30px; font-weight: 800; color: #1A0C06;">Order #0412 sent from table</div>
+            <div class="mono" style="font-size: 20px; color: #6C625C;">2× Flat white · 1× Smash burger · 16.50</div>
+          </div>
+          <div id="d4-guest-pill" class="mono" style="background: #1A0C06; color: #FBEFE6; padding: 14px 24px; border-radius: 999px; font-size: 20px; font-weight: 700;">
+            Sent ✓
+          </div>
+        </div>
+
+        <!-- Window 2: Reception Screen -->
+        <div id="d4-card-2" class="card-light" style="padding: 24px 30px; background: #FFEEE3; border-color: #E8500C; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div class="mono" style="font-size: 16px; font-weight: 700; color: #C03E0A;">2. RECEPTION SCREEN</div>
+            <div style="font-size: 30px; font-weight: 800; color: #1A0C06;">Table 5 · Ticket #0412</div>
+            <div style="font-size: 20px; color: #1A0C06; font-weight: 600;">Instant table number + items · Zero paper slips</div>
+          </div>
+          <div class="mono" style="background: #E8500C; color: #FBEFE6; padding: 14px 24px; border-radius: 999px; font-size: 20px; font-weight: 700;">
+            Confirmed
+          </div>
+        </div>
+
+        <!-- Window 3: Kitchen Pass Screen -->
+        <div id="d4-card-3" class="card-dark" style="padding: 28px 32px; border-color: #E8500C; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div class="mono" style="font-size: 17px; color: #FBA877; font-weight: 700;">3. KITCHEN PASS SCREEN</div>
+              <div style="font-size: 36px; font-weight: 800;">#0412 · Table 5</div>
+            </div>
+            <div id="d4-kit-status" class="mono" style="background: #E8500C; color: #FBEFE6; padding: 14px 28px; border-radius: 999px; font-size: 22px; font-weight: 800;">
+              COOKING
+            </div>
+          </div>
+
+          <!-- Animated 4-stage Kitchen Progress -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 14px 0;">
+            <div class="mono" style="padding: 14px; border-radius: 14px; text-align: center; font-size: 18px; font-weight: 700; background: #2A180D; color: #FBEFE6;">New</div>
+            <div id="k-step-cook" class="mono" style="padding: 14px; border-radius: 14px; text-align: center; font-size: 18px; font-weight: 700; background: #E8500C; color: #FBEFE6;">Cooking</div>
+            <div id="k-step-ready" class="mono" style="padding: 14px; border-radius: 14px; text-align: center; font-size: 18px; font-weight: 700; background: #2A180D; color: #FBEFE6;">Ready</div>
+            <div id="k-step-served" class="mono" style="padding: 14px; border-radius: 14px; text-align: center; font-size: 18px; font-weight: 700; background: #2A180D; color: #FBEFE6;">Served</div>
+          </div>
+
+          <div style="height: 12px; background: #2A180D; border-radius: 999px; overflow: hidden;">
+            <div id="d4-progress-fill" style="height: 100%; width: 40%; background: #C4F042;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 3A: SPINNING VARIABLE-FONT CAPABILITY WHEEL (7.79 - 9.15s) -->
+  <div id="wheel-overlay">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E3D9D3; padding-bottom: 22px;">
+      <span class="mono" style="font-size: 22px; font-weight: 700; color: #C03E0A;">WHAT YOUR FLOOR GETS · 12 CAPABILITIES</span>
+      <span class="mono" id="wheel-counter" style="font-size: 24px; font-weight: 800; color: #1A0C06;">01 / 12</span>
+    </div>
+
+    <div id="wheel-list" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; flex: 1;">
+      <!-- Populated dynamically by renderAtTime -->
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid #E3D9D3; padding-top: 22px;">
+      <span style="font-size: 24px; font-weight: 700; color: #6C625C;">Three modular levels</span>
+      <span class="mono" id="wheel-level-tag" style="background: #E8500C; color: #FBEFE6; padding: 10px 24px; border-radius: 999px; font-size: 22px; font-weight: 700;">Level 2</span>
+    </div>
+  </div>
+
+  <!-- Animated Touch Cursor -->
+  <div id="touch-cursor">
+    <div id="touch-cursor-core"></div>
+    <div id="touch-ripple"></div>
+  </div>
+
+  <!-- Whip Transition Bar -->
+  <div id="whip-bar"></div>
+
+  <!-- SCENE 5: FULL-BLEED 3-LAYER CLOSING COLOUR FLIP (16.38 - 20.20s) -->
+  <div id="closing-flip">
+    <!-- Layer 1: Cream #F7F2ED -->
+    <div style="position: absolute; inset: 0; background: #F7F2ED; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px; text-align: center;">
+      <div id="cf-l1-top" style="font-size: 92px; font-weight: 800; line-height: 1.02; letter-spacing: -0.04em; color: #1A0C06;">
+        Stop running<br/>orders,
+      </div>
+    </div>
+
+    <!-- Layer 2: Burnt Orange #E8500C Hard-Edged Wipe -->
+    <div id="cf-orange" style="position: absolute; inset: 0; background: #E8500C; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px; text-align: center; clip-path: inset(100% 0% 0% 0%);">
+      <div id="cf-l2-top" style="font-size: 86px; font-weight: 800; line-height: 1.02; letter-spacing: -0.04em; color: rgba(251,239,230,0.55); margin-bottom: 24px;">
+        Stop running<br/>orders,
+      </div>
+      <div id="cf-l2-bot" style="font-size: 96px; font-weight: 900; line-height: 1.0; letter-spacing: -0.04em; color: #FBEFE6;">
+        start running<br/>your restaurant.
+      </div>
+    </div>
+
+    <!-- Layer 3: Deep Espresso #140905 Hard-Edged Wipe -->
+    <div id="cf-dark" style="position: absolute; inset: 0; background: #140905; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px; text-align: center; clip-path: inset(100% 0% 0% 0%);">
+      <div style="font-size: 82px; font-weight: 800; line-height: 1.02; letter-spacing: -0.04em; color: rgba(251,239,230,0.25); filter: blur(7px); margin-bottom: 20px;">
+        Stop running<br/>orders,
+      </div>
+      <div style="font-size: 96px; font-weight: 900; line-height: 1.0; letter-spacing: -0.04em; color: #E8500C; margin-bottom: 72px;">
+        start running<br/>your restaurant.
+      </div>
+
+      <div id="cf-badge" style="background: #1A0C06; border: 3px solid #E8500C; border-radius: 40px; padding: 36px 48px; display: flex; flex-direction: column; align-items: center; gap: 18px; width: 880px;">
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <div class="bb-icon" style="width: 64px; height: 64px; font-size: 28px; border-radius: 18px;">BB</div>
+          <div style="text-align: left;">
+            <div style="font-size: 44px; font-weight: 800; color: #FBEFE6; line-height: 1;">Build Bros</div>
+            <div class="mono" style="font-size: 20px; color: #FBA877; margin-top: 6px;">Digital ordering for cafes &amp; restaurants</div>
+          </div>
+        </div>
+        <div class="mono" style="background: #E8500C; color: #FBEFE6; padding: 18px 36px; border-radius: 999px; font-size: 24px; font-weight: 800; width: 100%; text-align: center;">
+          Call / WhatsApp · +91 92035 66401
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from './three.module.js';
+
+    const WHEEL_ITEMS = [
+      { n: 1, text: 'A menu on every table', level: 1, wdth: 125, wght: 600, slnt: 0 },
+      { n: 2, text: 'Photos and prices', level: 1, wdth: 100, wght: 700, slnt: 0 },
+      { n: 3, text: 'Browse by category', level: 1, wdth: 85, wght: 800, slnt: 0 },
+      { n: 4, text: 'Change a price in a minute', level: 1, wdth: 110, wght: 600, slnt: -8 },
+      { n: 5, text: 'Pick dishes into a cart', level: 2, wdth: 125, wght: 500, slnt: 0 },
+      { n: 6, text: 'One button calls the waiter', level: 2, wdth: 95, wght: 800, slnt: 0 },
+      { n: 7, text: 'Waiter sees your table number', level: 2, wdth: 115, wght: 700, slnt: -6 },
+      { n: 8, text: 'Waiter walks over & takes order', level: 2, wdth: 85, wght: 800, slnt: 0 },
+      { n: 9, text: 'Order straight from the phone', level: 3, wdth: 125, wght: 700, slnt: 0 },
+      { n: 10, text: 'Lands at reception or kitchen', level: 3, wdth: 100, wght: 900, slnt: 0 },
+      { n: 11, text: 'The kitchen marks it ready', level: 3, wdth: 90, wght: 700, slnt: -8 },
+      { n: 12, text: 'Served with live phone status', level: 3, wdth: 120, wght: 800, slnt: 0 },
+    ];
+
+    // Setup Three.js 3D Cafe Stage inside #webgl-container
+    const container = document.getElementById('webgl-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x140905);
+
+    const camera = new THREE.PerspectiveCamera(30, 992 / 760, 0.1, 120);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(992, 760, false);
+    renderer.setPixelRatio(1);
+    container.appendChild(renderer.domElement);
+
+    // Lighting
+    const hemi = new THREE.HemisphereLight(0xfbefe6, 0x1a0c06, 1.35);
+    scene.add(hemi);
+    const dirLight = new THREE.DirectionalLight(0xffeedd, 1.1);
+    dirLight.position.set(8, 18, 12);
+    scene.add(dirLight);
+    const t5Light = new THREE.PointLight(0xe8500c, 4.5, 10);
+    t5Light.position.set(-0.8, 2.8, 0.2);
+    scene.add(t5Light);
+
+    // Floor Slab
+    const slab = new THREE.Mesh(
+      new THREE.BoxGeometry(20, 0.4, 13.5),
+      new THREE.MeshLambertMaterial({ color: 0x1d100a })
+    );
+    slab.position.set(0, -0.2, 0);
+    scene.add(slab);
+
+    // Border wireframe
+    const borderEdges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(20.1, 0.42, 13.6)),
+      new THREE.LineBasicMaterial({ color: 0xf7f2ed, transparent: true, opacity: 0.28 })
+    );
+    borderEdges.position.set(0, -0.18, 0);
+    scene.add(borderEdges);
+
+    // Counter & Reception & Kitchen Pass
+    const counter = new THREE.Mesh(
+      new THREE.BoxGeometry(9.5, 1.1, 1.7),
+      new THREE.MeshLambertMaterial({ color: 0x2a180d })
+    );
+    counter.position.set(-3.2, 0.55, -5.2);
+    scene.add(counter);
+
+    const counterStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(9.52, 0.12, 0.18),
+      new THREE.MeshBasicMaterial({ color: 0xf7f2ed })
+    );
+    counterStrip.position.set(-3.2, 1.12, -4.35);
+    scene.add(counterStrip);
+
+    const reception = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 1.15, 1.7),
+      new THREE.MeshLambertMaterial({ color: 0x2a180d })
+    );
+    reception.position.set(3.6, 0.57, -5.2);
+    scene.add(reception);
+
+    const kitchenMat = new THREE.MeshLambertMaterial({
+      color: 0x5c1c07,
+      emissive: 0xe8500c,
+      emissiveIntensity: 0.15,
+    });
+    const kitchen = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.5, 10.6), kitchenMat);
+    kitchen.position.set(8.0, 0.75, 0.2);
+    scene.add(kitchen);
+
+    const kitchenPassStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.18, 10.2),
+      new THREE.MeshBasicMaterial({ color: 0xe8500c })
+    );
+    kitchenPassStrip.position.set(6.8, 1.52, 0.2);
+    scene.add(kitchenPassStrip);
+
+    // 12 Tables
+    const tablePositions = [
+      { id: 1, x: -6.2, z: -2.2, round: true },
+      { id: 2, x: -2.6, z: -2.2, round: false },
+      { id: 3, x: 1.0, z: -2.2, round: true },
+      { id: 4, x: 4.4, z: -2.2, round: false },
+      { id: 6, x: -6.2, z: 0.8, round: true },
+      { id: 5, x: -0.8, z: 0.6, round: true }, // HERO TABLE 5
+      { id: 7, x: 2.2, z: 0.8, round: false },
+      { id: 8, x: 4.8, z: 0.8, round: true },
+      { id: 9, x: -6.2, z: 3.9, round: false },
+      { id: 10, x: -2.6, z: 3.9, round: true },
+      { id: 11, x: 1.0, z: 3.9, round: true },
+      { id: 12, x: 4.4, z: 3.9, round: false },
+    ];
+
+    let table5TopMat;
+    const qrPlaques = [];
+
+    tablePositions.forEach((t) => {
+      const g = new THREE.Group();
+      g.position.set(t.x, 0, t.z);
+
+      const isT5 = t.id === 5;
+      const mat = new THREE.MeshLambertMaterial({
+        color: isT5 ? 0xe8500c : 0x3b2314,
+        emissive: isT5 ? 0xe8500c : 0x000000,
+        emissiveIntensity: isT5 ? 0.45 : 0,
+      });
+      if (isT5) table5TopMat = mat;
+
+      const topGeo = t.round
+        ? new THREE.CylinderGeometry(isT5 ? 1.15 : 0.95, isT5 ? 1.15 : 0.95, 0.16, 28)
+        : new THREE.BoxGeometry(1.75, 0.16, 1.75);
+      const topMesh = new THREE.Mesh(topGeo, mat);
+      topMesh.position.y = 0.78;
+      g.add(topMesh);
+
+      // Pedestal
+      const ped = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.35, 0.76, 12),
+        new THREE.MeshLambertMaterial({ color: 0x1a0c06 })
+      );
+      ped.position.y = 0.38;
+      g.add(ped);
+
+      // Chairs
+      const chairOffsets = [
+        [isT5 ? -1.35 : -1.15, 0],
+        [isT5 ? 1.35 : 1.15, 0],
+        [0, isT5 ? -1.35 : -1.15],
+        [0, isT5 ? 1.35 : 1.15],
+      ];
+      chairOffsets.forEach(([cx, cz]) => {
+        const chair = new THREE.Mesh(
+          new THREE.BoxGeometry(0.42, 0.55, 0.42),
+          new THREE.MeshLambertMaterial({ color: 0x52321e })
+        );
+        chair.position.set(cx, 0.28, cz);
+        g.add(chair);
+      });
+
+      // QR Plaque on table
+      const qr = new THREE.Mesh(
+        new THREE.BoxGeometry(isT5 ? 0.48 : 0.32, 0.05, isT5 ? 0.48 : 0.32),
+        new THREE.MeshBasicMaterial({ color: 0xf7f2ed })
+      );
+      qr.position.set(0.22, 0.89, 0.18);
+      g.add(qr);
+      qrPlaques.push(qr);
+
+      // Guests at Table 5
+      if (isT5) {
+        [-1.32, 1.32].forEach((gx) => {
+          const guest = new THREE.Group();
+          const body = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.26, 0.3, 0.75, 16),
+            new THREE.MeshLambertMaterial({ color: 0xf7f2ed })
+          );
+          body.position.y = 0.65;
+          const head = new THREE.Mesh(
+            new THREE.SphereGeometry(0.22, 16, 16),
+            new THREE.MeshLambertMaterial({ color: 0xffd5b8 })
+          );
+          head.position.y = 1.22;
+          guest.add(body, head);
+          guest.position.set(gx, 0, 0);
+          g.add(guest);
+        });
+      }
+
+      scene.add(g);
+    });
+
+    // Pulsing shockwave ring under Table 5
+    const t5RingGeo = new THREE.RingGeometry(1.25, 1.48, 40);
+    t5RingGeo.rotateX(-Math.PI / 2);
+    const t5RingMat = new THREE.MeshBasicMaterial({
+      color: 0xe8500c,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+    });
+    const t5Ring = new THREE.Mesh(t5RingGeo, t5RingMat);
+    t5Ring.position.set(-0.8, 0.05, 0.6);
+    scene.add(t5Ring);
+
+    // 3D QR Scan Cone over Table 5
+    const scanConeGeo = new THREE.ConeGeometry(0.95, 2.2, 28, 1, true);
+    const scanConeMat = new THREE.MeshBasicMaterial({
+      color: 0xe8500c,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+    });
+    const scanCone = new THREE.Mesh(scanConeGeo, scanConeMat);
+    scanCone.position.set(-0.58, 1.95, 0.78);
+    scene.add(scanCone);
+
+    // Two 3D Waiter Figures with orange aprons
+    function createWaiterMesh() {
+      const wg = new THREE.Group();
+      const torso = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.28, 0.32, 0.9, 16),
+        new THREE.MeshLambertMaterial({ color: 0xf7f2ed })
+      );
+      torso.position.y = 0.55;
+      const apron = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.33, 0.5, 16),
+        new THREE.MeshBasicMaterial({ color: 0xe8500c })
+      );
+      apron.position.y = 0.45;
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.24, 16, 16),
+        new THREE.MeshLambertMaterial({ color: 0xfbefe6 })
+      );
+      head.position.y = 1.22;
+      wg.add(torso, apron, head);
+      return wg;
+    }
+    const waiter1 = createWaiterMesh();
+    const waiter2 = createWaiterMesh();
+    scene.add(waiter1, waiter2);
+
+    // Glowing Order Route Spheres (Table 5 -> Reception & Table 5 -> Kitchen)
+    const pulseSphereGeo = new THREE.SphereGeometry(0.26, 16, 16);
+    const pulseSphereMat = new THREE.MeshBasicMaterial({ color: 0xc4f042 });
+    const orderOrbRec = new THREE.Mesh(pulseSphereGeo, pulseSphereMat);
+    const orderOrbKit = new THREE.Mesh(pulseSphereGeo, new THREE.MeshBasicMaterial({ color: 0xe8500c }));
+    orderOrbRec.visible = false;
+    orderOrbKit.visible = false;
+    scene.add(orderOrbRec, orderOrbKit);
+
+    // Route lines
+    const routeLineMat = new THREE.LineBasicMaterial({ color: 0xe8500c, transparent: true, opacity: 0 });
+    const recPoints = [new THREE.Vector3(-0.8, 0.3, 0.6), new THREE.Vector3(3.6, 0.3, -4.3)];
+    const kitPoints = [new THREE.Vector3(-0.8, 0.3, 0.6), new THREE.Vector3(6.8, 0.3, 0.2)];
+    const routeLines = new THREE.Group();
+    routeLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(recPoints), routeLineMat));
+    routeLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(kitPoints), routeLineMat));
+    scene.add(routeLines);
+
+    // Helper math
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+    function easeOutBack(x) {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+    }
+    function easeOutCubic(x) {
+      return 1 - Math.pow(1 - x, 3);
+    }
+
+    // Populate Wheel DOM once
+    const wheelListEl = document.getElementById('wheel-list');
+    const wheelRowEls = WHEEL_ITEMS.map((item) => {
+      const row = document.createElement('div');
+      row.style.width = '100%';
+      row.style.textAlign = 'center';
+      row.style.padding = '12px 0';
+      row.style.borderRadius = '16px';
+      row.textContent = item.text;
+      wheelListEl.appendChild(row);
+      return row;
+    });
+
+    function showTouch(x, y, tapProgress) {
+      const cur = document.getElementById('touch-cursor');
+      const rip = document.getElementById('touch-ripple');
+      cur.style.display = 'flex';
+      cur.style.left = `${x.toFixed(1)}px`;
+      cur.style.top = `${y.toFixed(1)}px`;
+      const scale = tapProgress > 0 ? 1 - Math.sin(tapProgress * Math.PI) * 0.28 : 1;
+      cur.style.transform = `scale(${scale.toFixed(2)})`;
+      if (tapProgress > 0) {
+        rip.style.opacity = (1 - tapProgress).toFixed(2);
+        rip.style.transform = `scale(${(1 + tapProgress * 1.4).toFixed(2)})`;
+      } else {
+        rip.style.opacity = '0';
+      }
+    }
+
+    function hideTouch() {
+      document.getElementById('touch-cursor').style.display = 'none';
+    }
+
+    // Master frame function called by render-brag.mjs
+    window.renderAtTime = function (t) {
+      const d1 = document.getElementById('deck-1');
+      const d2 = document.getElementById('deck-2');
+      const d3 = document.getElementById('deck-3');
+      const d4 = document.getElementById('deck-4');
+      const wheelOverlay = document.getElementById('wheel-overlay');
+      const closingFlip = document.getElementById('closing-flip');
+      const whipBar = document.getElementById('whip-bar');
+      const headerStatus = document.getElementById('header-status');
+      const hudCamLabel = document.getElementById('hud-cam-label');
+      const hudTableStatus = document.getElementById('hud-table-status');
+
+      d1.style.display = 'none';
+      d2.style.display = 'none';
+      d3.style.display = 'none';
+      d4.style.display = 'none';
+      wheelOverlay.style.display = 'none';
+      closingFlip.style.display = 'none';
+      whipBar.style.clipPath = 'inset(100% 0% 0% 0%)';
+      hideTouch();
+
+      // Always pulse Table 5 ring in 3D
+      const ringPulse = (t * 1.8) % 1;
+      t5Ring.scale.setScalar(1 + ringPulse * 0.85);
+      t5RingMat.opacity = (1 - ringPulse) * 0.85;
+
+      // Quick whip transitions around 3.55s and 11.80s
+      if (Math.abs(t - 3.55) < 0.14) {
+        const wp = (t - (3.55 - 0.14)) / 0.28;
+        const topI = wp < 0.5 ? (1 - wp * 2) * 100 : 0;
+        const botI = wp >= 0.5 ? (wp - 0.5) * 2 * 100 : 0;
+        whipBar.style.clipPath = `inset(${topI.toFixed(1)}% 0% ${botI.toFixed(1)}% 0%)`;
+      }
+
+      if (t < 3.55) {
+        // ============================================================
+        // SCENE 1 (0.00 - 3.55s): 3D FLOOR SWOOP + KINETIC HOOK
+        // ============================================================
+        d1.style.display = 'flex';
+        headerStatus.textContent = '8:40 PM · SATURDAY';
+        hudCamLabel.textContent = 'LIVE FLOOR · 12 TABLES';
+        hudTableStatus.textContent = '2 STAFF ON SHIFT';
+
+        const p = clamp(t / 3.55, 0, 1);
+        const camEase = easeOutCubic(p);
+        camera.position.set(
+          lerp(0, -1.2, camEase),
+          lerp(24.5, 14.2, camEase),
+          lerp(6.5, 11.8, camEase)
+        );
+        camera.lookAt(lerp(0, -0.4, camEase), 0, lerp(0, 0.4, camEase));
+
+        // Staff sprinting across floor
+        waiter1.position.set(lerp(-5.2, 1.5, p), 0, lerp(-3.6, -0.5, Math.sin(p * Math.PI)));
+        waiter2.position.set(lerp(4.2, -3.2, p), 0, lerp(2.6, -1.8, p));
+        scanConeMat.opacity = 0;
+        orderOrbRec.visible = false;
+        orderOrbKit.visible = false;
+        routeLineMat.opacity = 0;
+
+        // Kinetic word slam
+        const l1P = easeOutBack(clamp((t - 0.12) / 0.45, 0, 1));
+        const l2P = easeOutBack(clamp((t - 0.68) / 0.45, 0, 1));
+        const subP = easeOutCubic(clamp((t - 1.15) / 0.45, 0, 1));
+
+        const l1El = document.getElementById('d1-line1');
+        const l2El = document.getElementById('d1-line2');
+        const subEl = document.getElementById('d1-sub');
+
+        l1El.style.transform = `translateY(${((1 - l1P) * 55).toFixed(1)}px) scale(${(0.88 + 0.12 * l1P).toFixed(3)})`;
+        l1El.style.opacity = clamp(t / 0.25, 0, 1).toFixed(2);
+
+        l2El.style.transform = `translateY(${((1 - l2P) * 55).toFixed(1)}px) scale(${(0.88 + 0.12 * l2P).toFixed(3)})`;
+        l2El.style.opacity = clamp((t - 0.65) / 0.25, 0, 1).toFixed(2);
+
+        subEl.style.transform = `translateY(${((1 - subP) * 30).toFixed(1)}px)`;
+        subEl.style.opacity = subP.toFixed(2);
+      } else if (t < 7.79) {
+        // ============================================================
+        // SCENE 2 (3.55 - 7.79s): 3D ZOOM TO TABLE 5 + LASER QR SCAN + MENU
+        // ============================================================
+        d2.style.display = 'flex';
+        headerStatus.textContent = 'LEVEL 1 · DIGITAL MENU';
+        hudCamLabel.textContent = 'ZOOM · TABLE 5 QR';
+        hudTableStatus.textContent = 'BROWSER MENU OPEN';
+
+        const localT = t - 3.55;
+        const p = clamp(localT / 4.24, 0, 1);
+        const zoomE = easeOutCubic(clamp(localT / 0.9, 0, 1));
+
+        // 3D Camera dives into Table 5 and orbits gently
+        const orbitAngle = (localT - 0.5) * 0.35;
+        camera.position.set(
+          lerp(-1.2, -0.8 + Math.sin(orbitAngle) * 1.4, zoomE),
+          lerp(14.2, 5.2, zoomE),
+          lerp(11.8, 4.8 + Math.cos(orbitAngle) * 0.6, zoomE)
+        );
+        camera.lookAt(-0.8, lerp(0, 0.85, zoomE), 0.6);
+
+        // Sweeping 3D laser scan cone over Table 5 QR plaque
+        scanConeMat.opacity = 0.28 + 0.18 * Math.sin(localT * 6);
+        scanCone.position.y = 1.85 + Math.sin(localT * 5) * 0.15;
+        scanCone.rotation.y = localT * 1.8;
+
+        // Phone card spring entrance
+        const cardP = easeOutBack(clamp(localT / 0.55, 0, 1));
+        const phoneCard = document.getElementById('d2-phone');
+        phoneCard.style.transform = `translateY(${((1 - cardP) * 90).toFixed(1)}px) rotateX(${((1 - cardP) * 12).toFixed(1)}deg)`;
+
+        // Staggered dish cards
+        ['dish-1', 'dish-2', 'dish-3'].forEach((id, idx) => {
+          const dp = easeOutBack(clamp((localT - (0.35 + idx * 0.28)) / 0.45, 0, 1));
+          const el = document.getElementById(id);
+          el.style.transform = `translateX(${((1 - dp) * 70).toFixed(1)}px)`;
+          el.style.opacity = clamp((localT - (0.32 + idx * 0.28)) / 0.25, 0, 1).toFixed(2);
+        });
+
+        // Animated touch cursor tapping "+ Add" on Flat white & Smash burger
+        if (localT > 1.0 && localT < 2.2) {
+          const tapP = clamp((localT - 1.35) / 0.35, 0, 1);
+          showTouch(860, 1385, tapP);
+          if (localT > 1.45) {
+            document.getElementById('dish-1-btn').textContent = 'Added (2) ✓';
+            document.getElementById('dish-1-btn').style.background = '#1A0C06';
+          }
+        } else if (localT >= 2.2 && localT < 3.6) {
+          const moveP = easeOutCubic(clamp((localT - 2.2) / 0.45, 0, 1));
+          const cy = lerp(1385, 1520, moveP);
+          const tapP = clamp((localT - 2.75) / 0.35, 0, 1);
+          showTouch(860, cy, tapP);
+          if (localT > 2.85) {
+            document.getElementById('dish-2-btn').textContent = 'Added (1) ✓';
+            document.getElementById('dish-2-btn').style.background = '#E8500C';
+          }
+        } else {
+          document.getElementById('dish-1-btn').textContent = '+ Add';
+          document.getElementById('dish-2-btn').textContent = '+ Add';
+        }
+      } else if (t < 9.15) {
+        // ============================================================
+        // SCENE 3A (7.79 - 9.15s): VARIABLE-FONT CAPABILITY WHEEL SPIN
+        // ============================================================
+        wheelOverlay.style.display = 'flex';
+        headerStatus.textContent = '12 FLOOR CAPABILITIES';
+
+        const localT = t - 7.79;
+        const spinP = clamp(localT / 1.36, 0, 1);
+        // Spin smoothly from item 0 to item 6 ("Waiter sees your table number")
+        const activeFloat = lerp(0, 6, easeOutCubic(spinP));
+        const activeIdx = Math.round(activeFloat);
+
+        document.getElementById('wheel-counter').textContent = `${String(activeIdx + 1).padStart(2, '0')} / 12`;
+        document.getElementById('wheel-level-tag').textContent = `Level ${WHEEL_ITEMS[activeIdx].level}`;
+
+        wheelRowEls.forEach((rowEl, idx) => {
+          const dist = Math.abs(idx - activeFloat);
+          const isCenter = Math.abs(idx - activeIdx) === 0;
+          const scale = clamp(1 - dist * 0.11, 0.48, 1.08);
+          const opacity = clamp(1 - dist * 0.22, 0.12, 1);
+          const item = WHEEL_ITEMS[idx];
+          rowEl.style.transform = `scale(${scale.toFixed(3)})`;
+          rowEl.style.opacity = opacity.toFixed(2);
+          rowEl.style.fontSize = isCenter ? '52px' : '36px';
+          rowEl.style.fontWeight = isCenter ? '800' : '600';
+          rowEl.style.color = isCenter ? '#E8500C' : '#1A0C06';
+          rowEl.style.background = isCenter ? '#FFEEE3' : 'transparent';
+          rowEl.style.borderTop = isCenter ? '2px solid #E8500C' : 'none';
+          rowEl.style.borderBottom = isCenter ? '2px solid #E8500C' : 'none';
+          rowEl.style.fontVariationSettings = `'wdth' ${item.wdth}, 'wght' ${item.wght}, 'slnt' ${item.slnt}`;
+        });
+      } else if (t < 11.80) {
+        // ============================================================
+        // SCENE 3B (9.15 - 11.80s): LEVEL 2 WAITER CALL + 3D WAITER WALK
+        // ============================================================
+        d3.style.display = 'flex';
+        headerStatus.textContent = 'LEVEL 2 · WAITER CALL';
+        hudCamLabel.textContent = 'WAITER DISPATCHED';
+        hudTableStatus.textContent = 'WALKING TO TABLE 5';
+        scanConeMat.opacity = 0;
+
+        const localT = t - 9.15;
+        const p = clamp(localT / 2.65, 0, 1);
+
+        // Camera frames Counter -> Table 5 walk path
+        camera.position.set(lerp(-2.5, -1.0, p), 11.5, lerp(8.5, 7.2, p));
+        camera.lookAt(-1.4, 0.4, -1.2);
+
+        // Waiter 1 walks directly from Counter (-2.8, -4.1) to Table 5 (-0.8, 0.6)
+        const walkP = easeOutCubic(clamp((localT - 0.35) / 1.9, 0, 1));
+        waiter1.position.set(lerp(-2.8, -0.8, walkP), Math.abs(Math.sin(walkP * Math.PI * 5)) * 0.14, lerp(-4.1, -0.75, walkP));
+
+        // Touch cursor taps "Call waiter to Table 5"
+        const callBtn = document.getElementById('d3-call-btn');
+        const toast = document.getElementById('d3-waiter-toast');
+        if (localT < 0.75) {
+          const tapP = clamp((localT - 0.25) / 0.35, 0, 1);
+          showTouch(540, 1295, tapP);
+          const btnScale = 1 - Math.sin(tapP * Math.PI) * 0.06;
+          callBtn.style.transform = `scale(${btnScale.toFixed(3)})`;
+          callBtn.style.background = '#E8500C';
+          callBtn.textContent = 'Call waiter to Table 5';
+        } else {
+          callBtn.style.transform = 'scale(1)';
+          callBtn.style.background = '#1A0C06';
+          callBtn.textContent = 'Waiter notified · Table 5 ✓';
+        }
+
+        const toastP = easeOutBack(clamp((localT - 0.45) / 0.5, 0, 1));
+        toast.style.transform = `translateY(${((1 - toastP) * 70).toFixed(1)}px) scale(${(0.9 + 0.1 * toastP).toFixed(3)})`;
+        toast.style.opacity = clamp((localT - 0.42) / 0.25, 0, 1).toFixed(2);
+      } else if (t < 16.38) {
+        // ============================================================
+        // SCENE 4 (11.80 - 16.38s): LEVEL 3 ORDER FLIGHT + 3-WINDOW SYNC
+        // ============================================================
+        d4.style.display = 'flex';
+        headerStatus.textContent = 'LEVEL 3 · FULL ORDERING';
+        hudCamLabel.textContent = 'TICKET #0412 · LIVE ROUTE';
+
+        const localT = t - 11.80;
+        const p = clamp(localT / 4.58, 0, 1);
+
+        // Camera pans across Table 5 -> Reception & Kitchen Pass
+        camera.position.set(lerp(-0.5, 2.4, easeOutCubic(p)), 13.8, lerp(8.8, 9.6, p));
+        camera.lookAt(lerp(0.5, 2.8, easeOutCubic(p)), 0.3, -0.4);
+
+        // Glowing 3D order orbs shoot from Table 5 to Reception and Kitchen
+        routeLineMat.opacity = 0.85;
+        orderOrbRec.visible = true;
+        orderOrbKit.visible = true;
+        const orbP = (localT * 0.85) % 1;
+        orderOrbRec.position.set(lerp(-0.8, 3.6, orbP), 0.55 + Math.sin(orbP * Math.PI) * 0.9, lerp(0.6, -4.3, orbP));
+        orderOrbKit.position.set(lerp(-0.8, 6.8, orbP), 0.55 + Math.sin(orbP * Math.PI) * 0.9, lerp(0.6, 0.2, orbP));
+
+        // Waiter carries ready order from Kitchen Pass to Table 5 after localT > 2.4s
+        if (localT > 2.2) {
+          const serveP = easeOutCubic(clamp((localT - 2.2) / 1.9, 0, 1));
+          waiter1.position.set(lerp(6.2, -0.8, serveP), Math.abs(Math.sin(serveP * Math.PI * 6)) * 0.14, lerp(0.2, 0.6, serveP));
+        }
+
+        // Cascade 3 cards with spring motion
+        ['d4-card-1', 'd4-card-2', 'd4-card-3'].forEach((id, idx) => {
+          const cp = easeOutBack(clamp((localT - idx * 0.28) / 0.5, 0, 1));
+          const el = document.getElementById(id);
+          el.style.transform = `translateY(${((1 - cp) * 65).toFixed(1)}px) scale(${(0.92 + 0.08 * cp).toFixed(3)})`;
+          el.style.opacity = clamp((localT - idx * 0.25) / 0.25, 0, 1).toFixed(2);
+        });
+
+        // Kitchen status flip at 14.20s (localT = 2.40s, synced to heavy kitchen bell SFX!)
+        const fillPct = clamp((localT / 2.6) * 100, 18, 100);
+        document.getElementById('d4-progress-fill').style.width = `${fillPct.toFixed(1)}%`;
+
+        const kitStatus = document.getElementById('d4-kit-status');
+        const guestPill = document.getElementById('d4-guest-pill');
+        const stepCook = document.getElementById('k-step-cook');
+        const stepReady = document.getElementById('k-step-ready');
+
+        if (localT >= 2.4) {
+          hudTableStatus.textContent = 'ORDER #0412 · READY!';
+          kitStatus.textContent = 'READY TO SERVE ✓';
+          kitStatus.style.background = '#C4F042';
+          kitStatus.style.color = '#140905';
+          guestPill.textContent = 'Ready · On way!';
+          guestPill.style.background = '#E8500C';
+          stepCook.style.background = '#2A180D';
+          stepReady.style.background = '#E8500C';
+          kitchenMat.emissiveIntensity = 0.65;
+        } else {
+          hudTableStatus.textContent = 'KITCHEN · COOKING #0412';
+          kitStatus.textContent = 'COOKING';
+          kitStatus.style.background = '#E8500C';
+          kitStatus.style.color = '#FBEFE6';
+          guestPill.textContent = 'Cooking...';
+          guestPill.style.background = '#1A0C06';
+          stepCook.style.background = '#E8500C';
+          stepReady.style.background = '#2A180D';
+          kitchenMat.emissiveIntensity = 0.25;
+        }
+      } else {
+        // ============================================================
+        // SCENE 5 (16.38 - 20.20s): FULL-BLEED 3-LAYER CLOSING COLOUR FLIP
+        // ============================================================
+        closingFlip.style.display = 'block';
+        const localT = t - 16.38;
+        const p = clamp(localT / (20.20 - 16.38), 0, 1);
+
+        // Layer 1 word slam
+        const w1P = easeOutBack(clamp(localT / 0.45, 0, 1));
+        const l1Top = document.getElementById('cf-l1-top');
+        l1Top.style.transform = `translateY(${((1 - w1P) * 60).toFixed(1)}px) scale(${(0.9 + 0.1 * w1P).toFixed(3)})`;
+
+        // Hard-edge Orange wipe (starts at localT = 0.85s -> 17.23s)
+        const orangeP = easeOutCubic(clamp((localT - 0.82) / 0.85, 0, 1));
+        // Hard-edge Dark wipe (starts at localT = 1.95s -> 18.33s)
+        const darkP = easeOutCubic(clamp((localT - 1.95) / 0.85, 0, 1));
+
+        document.getElementById('cf-orange').style.clipPath = `inset(${((1 - orangeP) * 100).toFixed(2)}% 0% 0% 0%)`;
+        document.getElementById('cf-dark').style.clipPath = `inset(${((1 - darkP) * 100).toFixed(2)}% 0% 0% 0%)`;
+
+        const blurPx = (clamp((localT - 0.7) / 1.2, 0, 1) * 8).toFixed(1);
+        l1Top.style.filter = `blur(${blurPx}px)`;
+        document.getElementById('cf-l2-top').style.filter = `blur(${blurPx}px)`;
+
+        // Badge spring entrance on dark layer
+        const badgeP = easeOutBack(clamp((localT - 2.2) / 0.55, 0, 1));
+        const badgeEl = document.getElementById('cf-badge');
+        badgeEl.style.transform = `translateY(${((1 - badgeP) * 55).toFixed(1)}px) scale(${(0.9 + 0.1 * badgeP).toFixed(3)})`;
+      }
+
+      renderer.render(scene, camera);
+    };
+
+    window.renderAtTime(0);
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+[
+  {
+    "level": 1,
+    "label": "Level 1",
+    "title": "A menu on every table.",
+    "body": "Guests scan the code and the menu opens in their browser. Photos, prices and categories, always up to date.",
+    "chip": "No app for guests",
+    "video": "/media/level-1.mp4",
+    "poster": "/media/level-1.jpg"
+  },
+  {
+    "level": 2,
+    "label": "Level 2",
+    "title": "One button calls the waiter.",
+    "body": "Guests fill the cart, then tap the button below it. The waiter is notified with the table number and comes over to take the order.",
+    "chip": "Waiter notified",
+    "video": "/media/level-2.mp4",
+    "poster": "/media/level-2.jpg"
+  },
+  {
+    "level": 3,
+    "label": "Level 3",
+    "title": "The order goes straight in.",
+    "body": "Guests place the order themselves. It reaches reception or the kitchen, gets prepared and is served. They can follow its status.",
+    "chip": "Reception or kitchen",
+    "video": "/media/level-3.mp4",
+    "poster": "/media/level-3.jpg"
+  }
+]
