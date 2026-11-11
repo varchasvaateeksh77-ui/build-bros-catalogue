@@ -13,13 +13,9 @@ The application is organized around two uncluttered, single-purpose experiences 
      - Left: `← Catalogue` button + active theme switcher (`01 Elegant` · `02 Minimalist` · `03 Street` · `04 Terracotta`).
      - Center: **Single-Focus View Switcher** (`Guest Menu` · `3D Floor Stage` · `Kitchen Pass`) so only ONE clean screen is rendered at a time.
      - Right: Service Level pill (`L1` · `L2` · `L3`) + `DEMO · Table 5` indicator.
-   - **View A — `Guest Menu` (Default)**:
-     - Centered, spacious restaurant menu styled 100% in the active theme's tokens and layout personality:
-       - *01. Classy Elegant*: Centered editorial tasting-menu layout with fine gold rules.
-       - *02. Minimalist*: Architectural Nordic 2-column grid with crisp hairlines.
-       - *03. Street Style*: Bold poster cards with large condensed price tags and one-tap `+ ADD`.
-       - *04. Artisanal Terracotta*: Warm courtyard menu cards with soft rounded corners.
-     - Sticky bottom Cart Bar (`N items · $XX.XX — Send Order` or `Call Waiter`) that dispatches straight to the Kitchen Pass & 3D Floor.
+   - **View A — `Guest Menu & Cart` (Default)**:
+     - **Step 1 (`Browse Menu`)**: Centered, spacious restaurant menu styled 100% in the active theme's tokens and layout personality (*01. Classy Elegant* centered tasting menu, *02. Minimalist* 2-column architectural hairline grid, *03. Street Style* bold numbered poster cards, *04. Artisanal Terracotta* warm courtyard cards). Guests tap `+ Add to Cart` to build their selection, and a floating bottom pill (`Added to Cart · N dishes · $XX.XX — View Cart →`) plus header `Cart (N)` button let them open their cart when ready.
+     - **Step 2 (`Your Table Cart`)**: Dedicated cart review screen where the customer can adjust quantities (`−`/`+`), add an optional kitchen note, review the total for Table 5, and tap **`Place Order for Table 5 →`** (Level 3) or **`Call Waiter to Confirm Order →`** (Level 2).
    - **View B — `3D Floor Stage` (`threeui.com` style)**:
      - Full-width interactive 12-table floor stage showing Table 5 zoomed or full-room view, live waiter walking animation when called, and active table status.
    - **View C — `Kitchen Pass`**:
