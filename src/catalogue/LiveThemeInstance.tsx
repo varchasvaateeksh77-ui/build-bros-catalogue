@@ -11,6 +11,8 @@ import {
   computeThemeCartSummary,
   nextTicketStatus,
 } from './themeCatalogData';
+import { Floor2D } from '../svg/Floor2D';
+import { getChangeStageFloorState } from '../three/floorStates';
 import { soundEffects } from '../lib/soundEffects';
 
 interface LiveThemeInstanceProps {
@@ -21,7 +23,14 @@ interface LiveThemeInstanceProps {
   onBackToCatalogue: () => void;
 }
 
-type StaffTab = 'floor' | 'waiter' | 'reception' | 'kitchen' | 'editor';
+type FocusView = 'guest' | 'floor' | 'kitchen';
+
+const SHORT_THEME_LABELS: Record<ThemeId, string> = {
+  'classy-elegant': '01. Elegant',
+  minimalist: '02. Minimalist',
+  'street-style': '03. Street',
+  'artisanal-terracotta': '04. Terracotta',
+};
 
 export const LiveThemeInstance: React.FC<LiveThemeInstanceProps> = ({
   initialThemeId,
@@ -31,10 +40,15 @@ export const LiveThemeInstance: React.FC<LiveThemeInstanceProps> = ({
   onBackToCatalogue,
 }) => {
   const [activeThemeId, setActiveThemeId] = useState<ThemeId>(initialThemeId);
+  const [focusView, setFocusView] = useState<FocusView>('guest');
+  const [serviceLevel, setServiceLevel] = useState<ServiceLevel>(initialLevel);
+  const [tableNumber] = useState<number>(initialTable);
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [floorProgress, setFloorProgress] = useState<number>(0.65);
+
   const baseTheme: ProductThemeConfig =
     PRODUCT_THEMES.find((t) => t.id === activeThemeId) || PRODUCT_THEMES[0];
 
-  // Keep per-theme editable menus so Owner Menu Editor changes persist while testing
   const [menusByTheme, setMenusByTheme] = useState<Record<ThemeId, ThemeMenuItem[]>>(() => ({
     'classy-elegant': PRODUCT_THEMES[0].menu,
     minimalist: PRODUCT_THEMES[1].menu,
@@ -42,1616 +56,1043 @@ export const LiveThemeInstance: React.FC<LiveThemeInstanceProps> = ({
     'artisanal-terracotta': PRODUCT_THEMES[3].menu,
   }));
 
-  const [venueNamesByTheme, setVenueNamesByTheme] = useState<Record<ThemeId, string>>(() => ({
-    'classy-elegant':
-      initialThemeId === 'classy-elegant' && initialVenueName
-        ? initialVenueName
-        : PRODUCT_THEMES[0].defaultVenueName,
-    minimalist:
-      initialThemeId === 'minimalist' && initialVenueName
-        ? initialVenueName
-        : PRODUCT_THEMES[1].defaultVenueName,
-    'street-style':
-      initialThemeId === 'street-style' && initialVenueName
-        ? initialVenueName
-        : PRODUCT_THEMES[2].defaultVenueName,
-    'artisanal-terracotta':
-      initialThemeId === 'artisanal-terracotta' && initialVenueName
-        ? initialVenueName
-        : PRODUCT_THEMES[3].defaultVenueName,
-  }));
+  const venueName =
+    initialVenueName && activeThemeId === initialThemeId
+      ? initialVenueName
+      : baseTheme.defaultVenueName;
 
-  const [serviceLevel, setServiceLevel] = useState<ServiceLevel>(initialLevel);
-  const [tableNumber, setTableNumber] = useState<number>(initialTable);
-  const [viewLayout, setViewLayout] = useState<'split' | 'guest-only'>('split');
-  const [activeCategory, setActiveCategory] = useState<string>('All');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [orderNote, setOrderNote] = useState<string>('');
-  const [cartsByTheme, setCartsByTheme] = useState<
-    Record<ThemeId, Record<string, number>>
-  >({
-    'classy-elegant': { 'ce-1': 1, 'ce-3': 1 },
-    minimalist: { 'mn-1': 1, 'mn-3': 2 },
-    'street-style': { 'st-1': 2, 'st-4': 1 },
-    'artisanal-terracotta': { 'at-1': 1, 'at-6': 2 },
+  const currentMenu = menusByTheme[activeThemeId];
+  const filteredDishes = filterThemeMenu(currentMenu, activeCategory, '');
+
+  const [cartsByTheme, setCartsByTheme] = useState<Record<ThemeId, Record<string, number>>>({
+    'classy-elegant': {},
+    minimalist: {},
+    'street-style': {},
+    'artisanal-terracotta': {},
   });
 
-  const [staffTab, setStaffTab] = useState<StaffTab>('kitchen');
-  const [ticketSeq, setTicketSeq] = useState<number>(415);
+  const currentCart = cartsByTheme[activeThemeId] || {};
+  const cartSummary = computeThemeCartSummary(currentMenu, currentCart);
+
   const [tickets, setTickets] = useState<LiveOrderTicket[]>([
     {
       ticketNumber: '#0414',
       tableNumber: 5,
       items: [
-        {
-          id: baseTheme.menu[0].id,
-          name: baseTheme.menu[0].name,
-          qty: 2,
-          price: baseTheme.menu[0].price,
-        },
-        {
-          id: baseTheme.menu[2].id,
-          name: baseTheme.menu[2].name,
-          qty: 1,
-          price: baseTheme.menu[2].price,
-        },
+        { id: 'ce-1', name: 'Truffle & Heirloom Burrata', qty: 1, price: 18.0 },
+        { id: 'ce-3', name: '36-Hour Crispy Duck Confit', qty: 1, price: 34.0 },
       ],
-      total: Number((baseTheme.menu[0].price * 2 + baseTheme.menu[2].price).toFixed(2)),
+      total: 52.0,
       status: 'cooking',
       createdAt: 'Just now',
     },
   ]);
 
-  const [waiterCalls, setWaiterCalls] = useState<LiveWaiterCall[]>([
-    {
-      id: 'wc-1',
-      tableNumber: 3,
-      cartCount: 2,
-      cartTotal: 29.5,
-      reason: 'Order ready in cart',
-      status: 'calling',
-      createdAt: '1m ago',
-    },
-  ]);
-  const [waiterTargetTable, setWaiterTargetTable] = useState<number | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => soundEffects.isEnabled());
+  const [waiterCalls, setWaiterCalls] = useState<LiveWaiterCall[]>([]);
+  const [guestBanner, setGuestBanner] = useState<string | null>(null);
 
-  // New dish form inside Owner Menu Editor
-  const [newDishName, setNewDishName] = useState('');
-  const [newDishPrice, setNewDishPrice] = useState('12.00');
-  const [newDishCategory, setNewDishCategory] = useState('');
-
-  const currentMenu = menusByTheme[activeThemeId];
-  const currentVenueName = venueNamesByTheme[activeThemeId];
-  const currentCart = cartsByTheme[activeThemeId] || {};
-  const filteredMenu = filterThemeMenu(currentMenu, activeCategory, searchQuery);
-  const cartSummary = computeThemeCartSummary(currentMenu, currentCart);
-  const p = baseTheme.palette;
-
-  const handleSwitchTheme = (nextId: ThemeId) => {
-    setActiveThemeId(nextId);
-    setActiveCategory('All');
-    setSearchQuery('');
+  const handleSelectTheme = (id: ThemeId) => {
     soundEffects.playClick();
+    setActiveThemeId(id);
+    setActiveCategory('All');
+    setGuestBanner(null);
   };
 
-  const updateCartQty = (itemId: string, delta: number) => {
+  const handleUpdateQty = (dishId: string, delta: number) => {
     soundEffects.playPop();
     setCartsByTheme((prev) => {
       const themeCart = { ...(prev[activeThemeId] || {}) };
-      const nextQty = Math.max(0, (themeCart[itemId] || 0) + delta);
+      const nextQty = Math.max(0, (themeCart[dishId] || 0) + delta);
       if (nextQty === 0) {
-        delete themeCart[itemId];
+        delete themeCart[dishId];
       } else {
-        themeCart[itemId] = nextQty;
+        themeCart[dishId] = nextQty;
       }
       return { ...prev, [activeThemeId]: themeCart };
     });
   };
 
-  const handleCallWaiter = (
-    reason: LiveWaiterCall['reason'] = 'Order ready in cart'
-  ) => {
+  const handleCallWaiter = () => {
     soundEffects.playWaiterCall();
     const newCall: LiveWaiterCall = {
       id: `wc-${Date.now()}`,
       tableNumber,
       cartCount: cartSummary.totalCount,
       cartTotal: cartSummary.subtotal,
-      reason,
-      status: 'calling',
+      reason: cartSummary.totalCount > 0 ? 'Order ready in cart' : 'Question for waiter',
+      status: 'walking',
       createdAt: 'Just now',
     };
     setWaiterCalls((prev) => [newCall, ...prev]);
-    setWaiterTargetTable(tableNumber);
-    setStaffTab('waiter');
-  };
-
-  const handleAcknowledgeWaiterCall = (callId: string, targetTable: number) => {
-    soundEffects.playClick();
-    setWaiterTargetTable(targetTable);
-    setWaiterCalls((prev) =>
-      prev.map((c) => {
-        if (c.id !== callId) return c;
-        const nextStatus = c.status === 'calling' ? 'walking' : 'assisted';
-        return { ...c, status: nextStatus };
-      })
+    setGuestBanner(
+      `Waiter notified for Table ${tableNumber}. A waiter is walking over now.`
     );
   };
 
   const handlePlaceOrder = () => {
     if (cartSummary.items.length === 0) return;
     soundEffects.playOrderSent();
-    const numStr = `#0${ticketSeq}`;
-    setTicketSeq((n) => n + 1);
+    const nextNum = `#0${415 + tickets.length}`;
     const newTicket: LiveOrderTicket = {
-      ticketNumber: numStr,
+      ticketNumber: nextNum,
       tableNumber,
-      items: cartSummary.items.map(({ item, qty }) => ({
-        id: item.id,
-        name: item.name,
-        qty,
-        price: item.price,
-        note: orderNote.trim() || undefined,
+      items: cartSummary.items.map((entry) => ({
+        id: entry.item.id,
+        name: entry.item.name,
+        qty: entry.qty,
+        price: entry.item.price,
       })),
       total: cartSummary.subtotal,
-      status: 'incoming',
+      status: 'cooking',
       createdAt: 'Just now',
     };
     setTickets((prev) => [newTicket, ...prev]);
     setCartsByTheme((prev) => ({ ...prev, [activeThemeId]: {} }));
-    setOrderNote('');
-    setStaffTab('reception');
+    setGuestBanner(
+      `Order ${nextNum} sent to the kitchen for Table ${tableNumber}.`
+    );
   };
 
   const handleAdvanceTicket = (ticketNumber: string) => {
+    soundEffects.playKitchenReady();
     setTickets((prev) =>
       prev.map((t) => {
         if (t.ticketNumber !== ticketNumber) return t;
         const next = nextTicketStatus(t.status);
-        if (next === 'ready') {
-          soundEffects.playKitchenReady();
-        } else {
-          soundEffects.playClick();
-        }
+        setGuestBanner(
+          `Ticket ${t.ticketNumber} (Table ${t.tableNumber}) is now ${next.toUpperCase()}.`
+        );
         return { ...t, status: next };
       })
     );
   };
 
-  const handleUpdateDishPrice = (itemId: string, newPrice: number) => {
-    if (Number.isNaN(newPrice) || newPrice < 0) return;
-    setMenusByTheme((prev) => ({
-      ...prev,
-      [activeThemeId]: prev[activeThemeId].map((m) =>
-        m.id === itemId ? { ...m, price: Number(newPrice.toFixed(2)) } : m
-      ),
-    }));
-  };
-
-  const handleToggleSoldOut = (itemId: string) => {
+  const handleToggleSoldOut = (dishId: string) => {
     soundEffects.playClick();
     setMenusByTheme((prev) => ({
       ...prev,
-      [activeThemeId]: prev[activeThemeId].map((m) =>
-        m.id === itemId ? { ...m, soldOut: !m.soldOut } : m
+      [activeThemeId]: prev[activeThemeId].map((item) =>
+        item.id === dishId ? { ...item, soldOut: !item.soldOut } : item
       ),
     }));
   };
 
-  const handleAddCustomDish = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDishName.trim()) return;
-    const parsedPrice = parseFloat(newDishPrice);
-    if (Number.isNaN(parsedPrice) || parsedPrice <= 0) return;
-    const category =
-      newDishCategory.trim() ||
-      baseTheme.categories.find((c) => c !== 'All') ||
-      'Mains';
-
-    const created: ThemeMenuItem = {
-      id: `custom-${Date.now()}`,
-      name: newDishName.trim(),
-      category,
-      price: Number(parsedPrice.toFixed(2)),
-      description: 'Added live from the Build Bros Owner Menu Editor.',
-      tag: 'New Addition',
-      prepMinutes: 8,
-    };
-
-    setMenusByTheme((prev) => ({
-      ...prev,
-      [activeThemeId]: [created, ...prev[activeThemeId]],
-    }));
-    setNewDishName('');
-    soundEffects.playPop();
-  };
-
-  const latestTableTicket = tickets.find((t) => t.tableNumber === tableNumber);
-  const latestTableCall = waiterCalls.find(
-    (c) => c.tableNumber === tableNumber && c.status !== 'assisted'
-  );
-
-  // Table coordinates for the interactive 12-table floor map
-  const FLOOR_TABLES = [
-    { id: 1, x: 115, y: 155, round: true },
-    { id: 2, x: 245, y: 155, round: false },
-    { id: 3, x: 375, y: 155, round: true },
-    { id: 4, x: 505, y: 155, round: false },
-    { id: 5, x: 245, y: 270, round: true },
-    { id: 6, x: 115, y: 270, round: true },
-    { id: 7, x: 375, y: 270, round: false },
-    { id: 8, x: 505, y: 270, round: true },
-    { id: 9, x: 115, y: 385, round: false },
-    { id: 10, x: 245, y: 385, round: true },
-    { id: 11, x: 375, y: 385, round: true },
-    { id: 12, x: 505, y: 385, round: false },
-  ];
-
-  const targetTableCoord = FLOOR_TABLES.find(
-    (t) => t.id === (waiterTargetTable || tableNumber)
-  );
+  const floorMode =
+    serviceLevel === 1 ? 'menu' : serviceLevel === 2 ? 'waiter' : 'order';
+  const currentFloorState = getChangeStageFloorState(floorMode, floorProgress);
 
   return (
     <div
-      className="min-h-screen transition-colors duration-200"
       style={{
-        backgroundColor: p.canvas,
-        color: p.text,
+        backgroundColor: baseTheme.palette.canvas,
+        color: baseTheme.palette.text,
         fontFamily: baseTheme.bodyFont,
       }}
+      className="min-h-screen transition-colors duration-300 pb-32"
     >
-      {/* Top Studio & Instance Bar */}
-      <header className="sticky top-0 z-40 bg-[#140905] text-[#FBEFE6] border-b border-[#F7F2ED]/15 px-4 md:px-6 py-3">
-        <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+      {/* Sleek Single-Row Floating Pill Top Bar (tasteskill.dev / threeui.com style) */}
+      <div className="sticky top-4 z-50 px-4 md:px-8 pointer-events-none">
+        <header
+          style={{
+            backgroundColor:
+              baseTheme.palette.mode === 'dark'
+                ? 'rgba(18, 14, 12, 0.88)'
+                : 'rgba(26, 18, 12, 0.90)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+          className="pointer-events-auto max-w-[1160px] mx-auto h-14 px-4 rounded-[18px] text-[#FBEFE6] flex items-center justify-between gap-2 border border-white/12"
+        >
+          {/* Zone 1: Back to Catalogue + Compact Theme Switcher */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onBackToCatalogue}
-              className="px-3.5 py-2 rounded-[10px] bg-[#2A180D] text-[#FBEFE6] hover:bg-[#E8500C] font-semibold text-[13px] cursor-pointer transition-colors whitespace-nowrap shrink-0"
+              className="px-3 py-1.5 rounded-[10px] bg-white/10 hover:bg-white/18 text-[12px] font-medium cursor-pointer transition-colors shrink-0"
             >
-              ← Theme Catalogue
+              ← Catalogue
             </button>
-            <div className="hidden sm:flex items-center gap-2 text-[13px] text-[#FBEFE6]/70">
-              <span>Active Theme:</span>
-              <strong className="text-[#FBEFE6]">
-                {baseTheme.indexNumber}. {baseTheme.styleName}
-              </strong>
-            </div>
-          </div>
 
-          {/* Instant Theme Switcher */}
-          <div
-            className="flex items-center gap-1.5 bg-[#22150E] p-1 rounded-[12px] overflow-x-auto"
-            role="tablist"
-            aria-label="Switch live ordering theme"
-          >
-            {PRODUCT_THEMES.map((t) => {
-              const active = t.id === activeThemeId;
-              return (
+            <div className="hidden lg:flex items-center gap-1 pl-2 border-l border-white/15">
+              {PRODUCT_THEMES.map((t) => (
                 <button
                   key={t.id}
                   type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => handleSwitchTheme(t.id)}
-                  className={`px-3 py-1.5 rounded-[8px] text-[12px] font-semibold cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
-                    active
-                      ? 'bg-[#E8500C] text-[#FBEFE6]'
-                      : 'text-[#FBEFE6]/70 hover:text-[#FBEFE6]'
+                  onClick={() => handleSelectTheme(t.id)}
+                  className={`px-2.5 py-1 rounded-[8px] text-[12px] cursor-pointer transition-colors whitespace-nowrap ${
+                    t.id === activeThemeId
+                      ? 'bg-[#E8500C] text-white font-semibold'
+                      : 'text-[#D6C7B8] hover:text-white'
                   }`}
                 >
-                  {t.indexNumber}. {t.styleName}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Service Level + View Layout + Sound */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div
-              className="flex items-center bg-[#22150E] p-1 rounded-[10px]"
-              role="group"
-              aria-label="Service level"
-            >
-              {([1, 2, 3] as ServiceLevel[]).map((lvl) => (
-                <button
-                  key={lvl}
-                  type="button"
-                  onClick={() => setServiceLevel(lvl)}
-                  className={`px-2.5 py-1 rounded-[7px] text-[12px] font-mono-code font-semibold cursor-pointer whitespace-nowrap shrink-0 ${
-                    serviceLevel === lvl
-                      ? 'bg-[#FBEFE6] text-[#140905]'
-                      : 'text-[#FBEFE6]/70 hover:text-[#FBEFE6]'
-                  }`}
-                >
-                  L{lvl}
+                  {SHORT_THEME_LABELS[t.id]}
                 </button>
               ))}
             </div>
+          </div>
 
+          {/* Zone 2: Single-Focus View Switcher (One Clean Screen at a Time) */}
+          <nav
+            aria-label="Live theme view mode"
+            className="flex items-center gap-1 p-1 rounded-[12px] bg-black/35 border border-white/10"
+          >
             <button
               type="button"
-              onClick={() =>
-                setViewLayout((v) => (v === 'split' ? 'guest-only' : 'split'))
-              }
-              className="px-3 py-1.5 rounded-[10px] bg-[#2A180D] border border-[#F7F2ED]/15 text-[#FBEFE6] text-[12px] font-semibold cursor-pointer hover:border-[#E8500C] whitespace-nowrap shrink-0"
+              onClick={() => setFocusView('guest')}
+              className={`px-3 py-1 rounded-[8px] text-[12px] font-medium cursor-pointer transition-colors whitespace-nowrap ${
+                focusView === 'guest'
+                  ? 'bg-white text-[#140905] font-semibold'
+                  : 'text-[#D6C7B8] hover:text-white'
+              }`}
             >
-              {viewLayout === 'split'
-                ? 'Full Guest Phone View'
-                : 'Show Staff & Floor Split'}
+              Guest Menu
             </button>
-
             <button
               type="button"
-              onClick={() => setSoundEnabled(soundEffects.toggle())}
-              className="px-3 py-1.5 rounded-[10px] bg-[#22150E] text-[#FBEFE6]/80 text-[12px] font-mono-code cursor-pointer whitespace-nowrap shrink-0"
+              onClick={() => setFocusView('floor')}
+              className={`px-3 py-1 rounded-[8px] text-[12px] font-medium cursor-pointer transition-colors whitespace-nowrap ${
+                focusView === 'floor'
+                  ? 'bg-white text-[#140905] font-semibold'
+                  : 'text-[#D6C7B8] hover:text-white'
+              }`}
             >
-              {soundEnabled ? 'SFX: On' : 'SFX: Off'}
+              3D Floor Stage
             </button>
-          </div>
-        </div>
-      </header>
+            <button
+              type="button"
+              onClick={() => setFocusView('kitchen')}
+              className={`px-3 py-1 rounded-[8px] text-[12px] font-medium cursor-pointer transition-colors whitespace-nowrap ${
+                focusView === 'kitchen'
+                  ? 'bg-white text-[#140905] font-semibold'
+                  : 'text-[#D6C7B8] hover:text-white'
+              }`}
+            >
+              Kitchen Pass ({tickets.length})
+            </button>
+          </nav>
 
-      {/* Main Workspace Container */}
-      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-8">
-        {/* Live Instance Customization Strip */}
-        <div
-          className="mb-6 p-4 md:p-5 flex flex-wrap items-center justify-between gap-4"
-          style={{
-            backgroundColor: p.surface,
-            border: `1px solid ${p.border}`,
-            borderRadius: baseTheme.cardRadius,
-          }}
-        >
-          <div className="flex flex-wrap items-center gap-4">
-            <div>
-              <label
-                htmlFor="live-venue-name-input"
-                className="block text-[11px] font-mono-code uppercase tracking-wider mb-1"
-                style={{ color: p.muted }}
+          {/* Zone 3: Service Level Pill */}
+          <div className="flex items-center gap-1 bg-black/30 p-1 rounded-[10px] shrink-0">
+            {([1, 2, 3] as ServiceLevel[]).map((lvl) => (
+              <button
+                key={lvl}
+                type="button"
+                onClick={() => setServiceLevel(lvl)}
+                className={`px-2.5 py-1 rounded-[7px] font-mono-code text-[11px] cursor-pointer ${
+                  serviceLevel === lvl
+                    ? 'bg-[#E8500C] text-white font-semibold'
+                    : 'text-[#D6C7B8] hover:text-white'
+                }`}
               >
-                Live Restaurant Name (Editable)
-              </label>
-              <input
-                id="live-venue-name-input"
-                type="text"
-                value={currentVenueName}
-                onChange={(e) =>
-                  setVenueNamesByTheme((prev) => ({
-                    ...prev,
-                    [activeThemeId]: e.target.value,
-                  }))
-                }
-                className="px-3 py-1.5 text-[16px] font-semibold rounded-[8px] focus:outline-2"
-                style={{
-                  backgroundColor: p.elevated,
-                  color: p.text,
-                  border: `1px solid ${p.border}`,
-                  fontFamily: baseTheme.displayFont,
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="live-table-select"
-                className="block text-[11px] font-mono-code uppercase tracking-wider mb-1"
-                style={{ color: p.muted }}
-              >
-                Active Guest Table QR
-              </label>
-              <select
-                id="live-table-select"
-                value={tableNumber}
-                onChange={(e) => setTableNumber(Number(e.target.value))}
-                className="px-3 py-1.5 text-[14px] font-mono-code font-semibold rounded-[8px] cursor-pointer"
-                style={{
-                  backgroundColor: p.elevated,
-                  color: p.text,
-                  border: `1px solid ${p.border}`,
-                }}
-              >
-                {Array.from({ length: 12 }, (_, idx) => idx + 1).map((num) => (
-                  <option key={num} value={num}>
-                    Table {num} {num === 5 ? '(Featured)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+                L{lvl}
+              </button>
+            ))}
           </div>
+        </header>
+      </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-[13px]" style={{ color: p.muted }}>
-            <span>
-              Mode:{' '}
-              <strong style={{ color: p.text }}>
-                {serviceLevel === 1
-                  ? 'Level 1 · Digital Menu Only'
-                  : serviceLevel === 2
-                  ? 'Level 2 · Menu + One-Tap Waiter Call'
-                  : 'Level 3 · Full Table Ordering + Kitchen Sync'}
-              </strong>
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="font-mono-code">DEMO INSTANCE</span>
-          </div>
-        </div>
-
-        {/* Main Grid: Guest Phone + Connected Staff & Floor OS */}
-        <div
-          className={`grid grid-cols-1 ${
-            viewLayout === 'split' ? ' lg:grid-cols-12' : 'max-w-[680px] mx-auto'
-          } gap-6 items-start`}
-        >
-          {/* ============================================================== */}
-          {/* LEFT COLUMN: GUEST TABLE ORDERING INTERFACE                    */}
-          {/* ============================================================== */}
-          <div className={viewLayout === 'split' ? 'lg:col-span-5' : 'w-full'}>
+      {/* =====================================================================
+          VIEW 1: SPACIOUS GUEST TABLE MENU (Default, Uncluttered)
+         ===================================================================== */}
+      {focusView === 'guest' && (
+        <main className="max-w-[960px] mx-auto px-4 md:px-8 pt-10 md:pt-14">
+          {/* Spacious Venue Hero Header */}
+          <section
+            style={{
+              borderColor: baseTheme.palette.border,
+              borderRadius: baseTheme.cardRadius,
+            }}
+            className="relative h-64 md:h-80 overflow-hidden border mb-10"
+          >
+            <img
+              src={baseTheme.heroImage}
+              alt={venueName}
+              className="w-full h-full object-cover"
+            />
             <div
-              className="overflow-hidden transition-all"
+              className="absolute inset-0"
               style={{
-                backgroundColor: p.surface,
-                border: `1px solid ${p.border}`,
-                borderRadius: baseTheme.cardRadius,
+                background:
+                  'linear-gradient(to top, rgba(10, 8, 6, 0.86) 0%, rgba(10, 8, 6, 0.22) 60%, rgba(10, 8, 6, 0.35) 100%)',
               }}
-            >
-              {/* Theme Hero Banner inside Guest Phone */}
-              <div className="relative h-[210px] overflow-hidden bg-[#140905]">
-                <img
-                  src={baseTheme.heroImage}
-                  alt={currentVenueName}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/15 p-6 flex flex-col justify-between">
-                  <div className="flex items-center justify-between gap-2 text-[12px] font-mono-code text-[#FBEFE6]/90">
-                    <span>
-                      TABLE {tableNumber} · LEVEL {serviceLevel}
-                    </span>
-                    <span>DEMO · NO APP NEEDED</span>
-                  </div>
+            />
 
-                  <div>
-                    <div className="text-[12px] uppercase tracking-widest text-[#FBEFE6]/80 mb-1">
-                      {baseTheme.venueSubtitle}
-                    </div>
-                    <h1
-                      className="text-[32px] md:text-[36px] font-semibold text-white leading-[1.05] m-0"
-                      style={{ fontFamily: baseTheme.displayFont }}
-                    >
-                      {currentVenueName}
-                    </h1>
-                  </div>
-                </div>
-              </div>
+            <div className="absolute top-5 left-6 right-6 flex items-center justify-between text-[#FBEFE6]">
+              <span className="font-mono-code text-[11px] uppercase tracking-[0.16em] px-3 py-1 rounded-full bg-black/55 backdrop-blur-sm">
+                TABLE {tableNumber} · LEVEL {serviceLevel} · DEMO
+              </span>
 
-              {/* Guest Live Status Banner (when an order or waiter call is active for this table) */}
-              {(latestTableTicket || latestTableCall) && (
-                <div
-                  className="px-5 py-3.5 border-b flex flex-wrap items-center justify-between gap-2"
+              {serviceLevel >= 2 && (
+                <button
+                  type="button"
+                  onClick={handleCallWaiter}
                   style={{
-                    backgroundColor: p.elevated,
-                    borderColor: p.border,
-                  }}
-                >
-                  {latestTableTicket ? (
-                    <>
-                      <div className="text-[13px]">
-                        <span className="font-mono-code font-semibold">
-                          Ticket {latestTableTicket.ticketNumber}
-                        </span>
-                        <span className="mx-1.5" aria-hidden="true">
-                          ·
-                        </span>
-                        <span>
-                          {latestTableTicket.status === 'incoming' &&
-                            'Sent to reception'}
-                          {latestTableTicket.status === 'confirmed' &&
-                            'Confirmed by reception'}
-                          {latestTableTicket.status === 'cooking' &&
-                            'Kitchen is preparing your order'}
-                          {latestTableTicket.status === 'ready' &&
-                            'Ready at pass · Coming to your table'}
-                          {latestTableTicket.status === 'served' &&
-                            'Served at your table'}
-                        </span>
-                      </div>
-                      <span
-                        className="text-[12px] font-mono-code font-semibold px-2.5 py-1 rounded-[6px]"
-                        style={{
-                          backgroundColor: p.accent,
-                          color: p.accentText,
-                        }}
-                      >
-                        {latestTableTicket.status.toUpperCase()}
-                      </span>
-                    </>
-                  ) : latestTableCall ? (
-                    <>
-                      <div className="text-[13px]">
-                        <strong>Waiter notified</strong> · Table {tableNumber}
-                      </div>
-                      <span
-                        className="text-[12px] font-mono-code font-semibold px-2.5 py-1 rounded-[6px]"
-                        style={{
-                          backgroundColor: p.accent,
-                          color: p.accentText,
-                        }}
-                      >
-                        {latestTableCall.status === 'walking'
-                          ? 'WALKING OVER'
-                          : 'NOTIFIED'}
-                      </span>
-                    </>
-                  ) : null}
-                </div>
-              )}
-
-              {/* Search & Category Bar */}
-              <div className="p-5 border-b" style={{ borderColor: p.border }}>
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={`Search ${currentVenueName} menu...`}
-                  aria-label="Search menu dishes"
-                  className="w-full px-3.5 py-2.5 text-[14px] mb-3.5 focus:outline-2"
-                  style={{
-                    backgroundColor: p.elevated,
-                    color: p.text,
-                    border: `1px solid ${p.border}`,
+                    backgroundColor: baseTheme.palette.accent,
+                    color: baseTheme.palette.accentText,
                     borderRadius: baseTheme.buttonRadius,
                   }}
-                />
-
-                <div
-                  className="flex items-center gap-1.5 overflow-x-auto pb-1"
-                  role="tablist"
-                  aria-label="Menu categories"
+                  className="px-4 py-1.5 font-mono-code text-[11px] font-semibold uppercase tracking-[0.1em] cursor-pointer"
                 >
-                  {baseTheme.categories.map((cat) => {
-                    const active = activeCategory === cat;
-                    return (
-                      <button
-                        key={cat}
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        onClick={() => setActiveCategory(cat)}
-                        className="px-3.5 py-1.5 text-[13px] font-medium cursor-pointer transition-colors whitespace-nowrap shrink-0"
-                        style={{
-                          backgroundColor: active ? p.accent : p.elevated,
-                          color: active ? p.accentText : p.text,
-                          borderRadius: baseTheme.buttonRadius,
-                        }}
-                      >
-                        {cat}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                  Call Waiter
+                </button>
+              )}
+            </div>
 
-              {/* Dish List */}
-              <div className="divide-y max-h-[520px] overflow-y-auto" style={{ borderColor: p.border }}>
-                {filteredMenu.length === 0 ? (
-                  <div className="p-8 text-center text-[14px]" style={{ color: p.muted }}>
-                    No dishes match "{searchQuery}". Try another category.
-                  </div>
-                ) : (
-                  filteredMenu.map((dish) => {
-                    const qty = currentCart[dish.id] || 0;
-                    return (
-                      <div
-                        key={dish.id}
-                        className="p-5 flex items-start justify-between gap-4 transition-colors"
-                        style={{
-                          borderColor: p.border,
-                          opacity: dish.soldOut ? 0.52 : 1,
-                        }}
+            <div className="absolute bottom-6 left-6 right-6 text-[#FBEFE6]">
+              <p className="font-mono-code text-[11px] uppercase tracking-[0.16em] text-[#E6D5C3] mb-1">
+                {baseTheme.venueSubtitle}
+              </p>
+              <h1
+                style={{ fontFamily: baseTheme.displayFont }}
+                className="text-[36px] md:text-[52px] font-bold leading-[1.02]"
+              >
+                {venueName}
+              </h1>
+            </div>
+          </section>
+
+          {/* Calm Live Order / Waiter Notification Strip */}
+          {guestBanner && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                backgroundColor: baseTheme.palette.surface,
+                borderColor: baseTheme.palette.accent,
+                borderRadius: baseTheme.buttonRadius,
+              }}
+              className="mb-8 px-5 py-4 border flex items-center justify-between gap-4"
+            >
+              <span className="text-[14px] font-medium">{guestBanner}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setFocusView(serviceLevel === 2 ? 'floor' : 'kitchen')
+                }
+                style={{ color: baseTheme.palette.accent }}
+                className="font-mono-code text-[12px] font-semibold uppercase tracking-[0.08em] cursor-pointer shrink-0"
+              >
+                {serviceLevel === 2 ? 'View Waiter on 3D Floor →' : 'View in Kitchen Pass →'}
+              </button>
+            </div>
+          )}
+
+          {/* Clean Horizontal Category Bar */}
+          <nav
+            aria-label="Menu categories"
+            style={{ borderColor: baseTheme.palette.border }}
+            className="flex items-center gap-2 overflow-x-auto pb-5 mb-10 border-b"
+          >
+            {baseTheme.categories.map((cat) => {
+              const isSelected = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  style={{
+                    backgroundColor: isSelected
+                      ? baseTheme.palette.accent
+                      : baseTheme.palette.surface,
+                    color: isSelected
+                      ? baseTheme.palette.accentText
+                      : baseTheme.palette.text,
+                    borderColor: baseTheme.palette.border,
+                    borderRadius: baseTheme.buttonRadius,
+                  }}
+                  className="px-4 py-2 border text-[13px] font-medium whitespace-nowrap cursor-pointer transition-colors"
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* ===============================================================
+              FOUR DISTINCT, SPACIOUS MENU LAYOUT PERSONALITIES
+              (Max 3 data points per dish: Title+1-line desc, Price, +Add)
+             =============================================================== */}
+
+          {/* 01. CLASSY ELEGANT: Centered Single-Column Editorial Tasting Menu */}
+          {activeThemeId === 'classy-elegant' && (
+            <div
+              className="max-w-[740px] mx-auto divide-y"
+              style={{ borderColor: baseTheme.palette.border }}
+            >
+              {filteredDishes.map((dish) => {
+                const qty = currentCart[dish.id] || 0;
+                return (
+                  <div
+                    key={dish.id}
+                    style={{ borderColor: baseTheme.palette.border }}
+                    className="py-7 flex items-center justify-between gap-6"
+                  >
+                    <div className="space-y-1.5 max-w-[52ch]">
+                      <h2
+                        style={{ fontFamily: baseTheme.displayFont }}
+                        className="text-[24px] md:text-[28px] font-semibold leading-snug"
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 text-[12px] mb-1" style={{ color: p.muted }}>
-                            <span>{dish.category}</span>
-                            <span aria-hidden="true">·</span>
-                            <span className="font-mono-code tabular-nums">
-                              {dish.prepMinutes} min
+                        {dish.name}
+                      </h2>
+                      <p
+                        className="text-[14px] leading-relaxed"
+                        style={{ color: baseTheme.palette.muted }}
+                      >
+                        {dish.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0">
+                      <span
+                        className="font-mono-code text-[16px] font-semibold tabular-nums"
+                        style={{ color: baseTheme.palette.accent }}
+                      >
+                        {baseTheme.currencySymbol}
+                        {dish.price.toFixed(2)}
+                      </span>
+
+                      {serviceLevel >= 2 &&
+                        (qty > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label={`Remove one ${dish.name}`}
+                              onClick={() => handleUpdateQty(dish.id, -1)}
+                              style={{ borderColor: baseTheme.palette.border }}
+                              className="w-8 h-8 rounded-full border flex items-center justify-center cursor-pointer"
+                            >
+                              −
+                            </button>
+                            <span className="font-mono-code text-[14px] w-5 text-center tabular-nums">
+                              {qty}
                             </span>
-                            {dish.tag && (
-                              <>
-                                <span aria-hidden="true">·</span>
-                                <span style={{ color: p.accent, fontWeight: 600 }}>
-                                  {dish.tag}
-                                </span>
-                              </>
-                            )}
-                            {dish.soldOut && (
-                              <>
-                                <span aria-hidden="true">·</span>
-                                <span className="font-mono-code font-semibold text-[#C03E0A]">
-                                  SOLD OUT
-                                </span>
-                              </>
-                            )}
+                            <button
+                              type="button"
+                              aria-label={`Add one more ${dish.name}`}
+                              onClick={() => handleUpdateQty(dish.id, 1)}
+                              style={{
+                                backgroundColor: baseTheme.palette.accent,
+                                color: baseTheme.palette.accentText,
+                              }}
+                              className="w-8 h-8 rounded-full flex items-center justify-center font-bold cursor-pointer"
+                            >
+                              +
+                            </button>
                           </div>
-
-                          <h3
-                            className="text-[19px] font-semibold m-0 mb-1 leading-snug"
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={dish.soldOut}
+                            onClick={() => handleUpdateQty(dish.id, 1)}
                             style={{
-                              fontFamily: baseTheme.displayFont,
-                              color: p.text,
+                              borderColor: baseTheme.palette.accent,
+                              color: baseTheme.palette.accent,
+                              borderRadius: baseTheme.buttonRadius,
                             }}
+                            className="px-4 py-2 border font-mono-code text-[12px] uppercase tracking-[0.08em] cursor-pointer disabled:opacity-40"
+                          >
+                            {dish.soldOut ? 'Sold Out' : '+ Add'}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 02. MINIMALIST: Open Nordic Architectural Hairline Grid (No Heavy Boxes) */}
+          {activeThemeId === 'minimalist' && (
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 border-t border-l"
+              style={{ borderColor: baseTheme.palette.border }}
+            >
+              {filteredDishes.map((dish) => {
+                const qty = currentCart[dish.id] || 0;
+                return (
+                  <div
+                    key={dish.id}
+                    style={{ borderColor: baseTheme.palette.border }}
+                    className="p-8 border-r border-b flex flex-col justify-between gap-6"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
+                          {dish.name}
+                        </h2>
+                        <span
+                          className="font-mono-code text-[15px] font-medium tabular-nums shrink-0"
+                          style={{ color: baseTheme.palette.accent }}
+                        >
+                          {baseTheme.currencySymbol}
+                          {dish.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <p
+                        className="text-[14px] leading-relaxed"
+                        style={{ color: baseTheme.palette.muted }}
+                      >
+                        {dish.description}
+                      </p>
+                    </div>
+
+                    {serviceLevel >= 2 && (
+                      <div className="flex items-center justify-between pt-2">
+                        <span
+                          className="font-mono-code text-[11px] uppercase tracking-[0.12em]"
+                          style={{ color: baseTheme.palette.muted }}
+                        >
+                          {dish.category}
+                        </span>
+                        {qty > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label={`Remove one ${dish.name}`}
+                              onClick={() => handleUpdateQty(dish.id, -1)}
+                              style={{ borderColor: baseTheme.palette.border }}
+                              className="w-8 h-8 rounded-[6px] border flex items-center justify-center cursor-pointer"
+                            >
+                              −
+                            </button>
+                            <span className="font-mono-code text-[13px] w-5 text-center tabular-nums">
+                              {qty}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label={`Add one more ${dish.name}`}
+                              onClick={() => handleUpdateQty(dish.id, 1)}
+                              style={{
+                                backgroundColor: baseTheme.palette.accent,
+                                color: baseTheme.palette.accentText,
+                              }}
+                              className="w-8 h-8 rounded-[6px] flex items-center justify-center cursor-pointer"
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={dish.soldOut}
+                            onClick={() => handleUpdateQty(dish.id, 1)}
+                            style={{
+                              borderColor: baseTheme.palette.accent,
+                              color: baseTheme.palette.accent,
+                            }}
+                            className="px-3.5 py-1.5 rounded-[6px] border font-mono-code text-[11px] uppercase tracking-[0.1em] cursor-pointer disabled:opacity-40"
+                          >
+                            {dish.soldOut ? 'Sold Out' : '+ Add'}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 03. STREET STYLE: Bold Condensed Poster Cards with Oversized Numbers */}
+          {activeThemeId === 'street-style' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {filteredDishes.map((dish, idx) => {
+                const qty = currentCart[dish.id] || 0;
+                return (
+                  <div
+                    key={dish.id}
+                    style={{
+                      backgroundColor: baseTheme.palette.surface,
+                      borderColor: baseTheme.palette.border,
+                      borderRadius: baseTheme.cardRadius,
+                    }}
+                    className="p-6 border-2 flex flex-col justify-between gap-6"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <span
+                            className="font-mono-code text-[11px] uppercase tracking-[0.14em] block mb-1"
+                            style={{ color: baseTheme.palette.accent }}
+                          >
+                            NO. 0{idx + 1} · {dish.category.toUpperCase()}
+                          </span>
+                          <h2
+                            style={{ fontFamily: baseTheme.displayFont }}
+                            className="text-[28px] uppercase font-bold leading-[0.98] tracking-[0.01em]"
                           >
                             {dish.name}
-                          </h3>
-
-                          <p
-                            className="text-[13px] leading-[1.45] m-0 mb-2"
-                            style={{ color: p.muted }}
-                          >
-                            {dish.description}
-                          </p>
-
-                          <div
-                            className="font-mono-code text-[15px] font-semibold tabular-nums"
-                            style={{ color: p.text }}
-                          >
-                            {baseTheme.currencySymbol}
-                            {dish.price.toFixed(2)}
-                          </div>
+                          </h2>
                         </div>
+                        <span
+                          style={{
+                            backgroundColor: baseTheme.palette.accent,
+                            color: baseTheme.palette.accentText,
+                          }}
+                          className="px-2.5 py-1 rounded-[6px] font-mono-code text-[15px] font-bold tabular-nums shrink-0"
+                        >
+                          {baseTheme.currencySymbol}
+                          {dish.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <p
+                        className="text-[14px] leading-relaxed pt-1"
+                        style={{ color: baseTheme.palette.muted }}
+                      >
+                        {dish.description}
+                      </p>
+                    </div>
 
-                        {/* Level 1 shows browse-only price/availability; Level 2 & 3 show interactive cart steppers */}
-                        {serviceLevel >= 2 && !dish.soldOut && (
-                          <div className="flex items-center gap-1.5 shrink-0 pt-1">
-                            {qty > 0 ? (
-                              <>
-                                <button
-                                  type="button"
-                                  aria-label={`Remove one ${dish.name}`}
-                                  onClick={() => updateCartQty(dish.id, -1)}
-                                  className="w-8 h-8 flex items-center justify-center font-mono-code font-bold text-[15px] cursor-pointer"
-                                  style={{
-                                    backgroundColor: p.elevated,
-                                    color: p.text,
-                                    border: `1px solid ${p.border}`,
-                                    borderRadius: baseTheme.buttonRadius,
-                                  }}
-                                >
-                                  -
-                                </button>
-                                <span className="w-6 text-center font-mono-code font-semibold text-[14px] tabular-nums">
-                                  {qty}
-                                </span>
-                                <button
-                                  type="button"
-                                  aria-label={`Add one more ${dish.name}`}
-                                  onClick={() => updateCartQty(dish.id, 1)}
-                                  className="w-8 h-8 flex items-center justify-center font-mono-code font-bold text-[15px] cursor-pointer"
-                                  style={{
-                                    backgroundColor: p.accent,
-                                    color: p.accentText,
-                                    borderRadius: baseTheme.buttonRadius,
-                                  }}
-                                >
-                                  +
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => updateCartQty(dish.id, 1)}
-                                className="px-3.5 py-2 font-mono-code text-[13px] font-semibold cursor-pointer whitespace-nowrap"
-                                style={{
-                                  backgroundColor: p.elevated,
-                                  color: p.text,
-                                  border: `1px solid ${p.border}`,
-                                  borderRadius: baseTheme.buttonRadius,
-                                }}
-                              >
-                                + Add
-                              </button>
-                            )}
+                    {serviceLevel >= 2 && (
+                      <div className="flex items-center justify-end">
+                        {qty > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label={`Remove one ${dish.name}`}
+                              onClick={() => handleUpdateQty(dish.id, -1)}
+                              style={{ borderColor: baseTheme.palette.border }}
+                              className="w-9 h-9 rounded-[8px] border flex items-center justify-center font-bold cursor-pointer"
+                            >
+                              −
+                            </button>
+                            <span className="font-mono-code text-[15px] font-bold w-6 text-center tabular-nums">
+                              {qty}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label={`Add one more ${dish.name}`}
+                              onClick={() => handleUpdateQty(dish.id, 1)}
+                              style={{
+                                backgroundColor: baseTheme.palette.accent,
+                                color: baseTheme.palette.accentText,
+                              }}
+                              className="w-9 h-9 rounded-[8px] flex items-center justify-center font-bold cursor-pointer"
+                            >
+                              +
+                            </button>
                           </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={dish.soldOut}
+                            onClick={() => handleUpdateQty(dish.id, 1)}
+                            style={{
+                              backgroundColor: baseTheme.palette.elevated,
+                              color: baseTheme.palette.text,
+                              borderColor: baseTheme.palette.border,
+                            }}
+                            className="w-full py-2.5 rounded-[8px] border font-mono-code text-[12px] font-bold uppercase tracking-[0.12em] cursor-pointer hover:border-[#FF4D00]"
+                          >
+                            {dish.soldOut ? 'SOLD OUT' : '+ ADD TO TRAY'}
+                          </button>
                         )}
                       </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Guest Footer / Cart & Action Module */}
-              <div
-                className="p-5 border-t"
-                style={{
-                  backgroundColor: p.elevated,
-                  borderColor: p.border,
-                }}
-              >
-                {serviceLevel === 1 ? (
-                  <div className="flex items-center justify-between gap-3 text-[13px]">
-                    <span style={{ color: p.muted }}>
-                      Level 1 Digital Menu · Staff takes your order at Table {tableNumber}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setServiceLevel(2)}
-                      className="font-mono-code text-[12px] font-semibold underline cursor-pointer"
-                      style={{ color: p.accent }}
-                    >
-                      Preview Level 2 Cart →
-                    </button>
+                    )}
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[14px] font-semibold">
-                        Table {tableNumber} Cart ({cartSummary.totalCount}{' '}
-                        {cartSummary.totalCount === 1 ? 'item' : 'items'})
-                      </span>
-                      <span className="font-mono-code text-[18px] font-bold tabular-nums">
-                        {baseTheme.currencySymbol}
-                        {cartSummary.subtotal.toFixed(2)}
-                      </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 04. ARTISANAL TERRACOTTA: Warm Sunlit Courtyard Cards */}
+          {activeThemeId === 'artisanal-terracotta' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredDishes.map((dish) => {
+                const qty = currentCart[dish.id] || 0;
+                return (
+                  <div
+                    key={dish.id}
+                    style={{
+                      backgroundColor: baseTheme.palette.surface,
+                      borderColor: baseTheme.palette.border,
+                      borderRadius: baseTheme.cardRadius,
+                    }}
+                    className="p-7 border flex flex-col justify-between gap-6"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <h2
+                          style={{ fontFamily: baseTheme.displayFont }}
+                          className="text-[22px] md:text-[24px] font-bold leading-snug"
+                        >
+                          {dish.name}
+                        </h2>
+                        <span
+                          className="font-mono-code text-[16px] font-semibold tabular-nums shrink-0"
+                          style={{ color: baseTheme.palette.accent }}
+                        >
+                          {baseTheme.currencySymbol}
+                          {dish.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <p
+                        className="text-[14px] leading-relaxed"
+                        style={{ color: baseTheme.palette.muted }}
+                      >
+                        {dish.description}
+                      </p>
                     </div>
 
-                    {cartSummary.items.length > 0 && (
-                      <div className="text-[13px] space-y-1 pb-2 border-b" style={{ borderColor: p.border, color: p.muted }}>
-                        {cartSummary.items.map(({ item, qty, lineTotal }) => (
-                          <div key={item.id} className="flex justify-between">
-                            <span>
-                              {qty}× {item.name}
+                    {serviceLevel >= 2 && (
+                      <div className="flex items-center justify-between pt-2">
+                        <span
+                          className="font-mono-code text-[11px] uppercase tracking-[0.1em]"
+                          style={{ color: baseTheme.palette.muted }}
+                        >
+                          Wood-Fired · {dish.prepMinutes}m
+                        </span>
+                        {qty > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label={`Remove one ${dish.name}`}
+                              onClick={() => handleUpdateQty(dish.id, -1)}
+                              style={{ borderColor: baseTheme.palette.border }}
+                              className="w-8 h-8 rounded-full border flex items-center justify-center cursor-pointer"
+                            >
+                              −
+                            </button>
+                            <span className="font-mono-code text-[14px] w-5 text-center tabular-nums">
+                              {qty}
                             </span>
-                            <span className="font-mono-code tabular-nums">
-                              {baseTheme.currencySymbol}
-                              {lineTotal.toFixed(2)}
-                            </span>
+                            <button
+                              type="button"
+                              aria-label={`Add one more ${dish.name}`}
+                              onClick={() => handleUpdateQty(dish.id, 1)}
+                              style={{
+                                backgroundColor: baseTheme.palette.accent,
+                                color: baseTheme.palette.accentText,
+                              }}
+                              className="w-8 h-8 rounded-full flex items-center justify-center font-bold cursor-pointer"
+                            >
+                              +
+                            </button>
                           </div>
-                        ))}
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={dish.soldOut}
+                            onClick={() => handleUpdateQty(dish.id, 1)}
+                            style={{
+                              backgroundColor: baseTheme.palette.accent,
+                              color: baseTheme.palette.accentText,
+                              borderRadius: baseTheme.buttonRadius,
+                            }}
+                            className="px-5 py-2 font-mono-code text-[12px] font-semibold uppercase tracking-[0.08em] cursor-pointer disabled:opacity-40"
+                          >
+                            {dish.soldOut ? 'Sold Out' : '+ Add'}
+                          </button>
+                        )}
                       </div>
                     )}
-
-                    {serviceLevel === 3 && cartSummary.items.length > 0 && (
-                      <input
-                        type="text"
-                        value={orderNote}
-                        onChange={(e) => setOrderNote(e.target.value)}
-                        placeholder="Kitchen note (e.g. extra crispy, oat milk, no onions)..."
-                        className="w-full px-3 py-2 text-[13px]"
-                        style={{
-                          backgroundColor: p.surface,
-                          color: p.text,
-                          border: `1px solid ${p.border}`,
-                          borderRadius: baseTheme.buttonRadius,
-                        }}
-                      />
-                    )}
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => handleCallWaiter('Order ready in cart')}
-                        className="w-full py-3 px-4 font-semibold text-[14px] cursor-pointer transition-opacity hover:opacity-90"
-                        style={{
-                          backgroundColor:
-                            serviceLevel === 2 ? p.accent : p.surface,
-                          color: serviceLevel === 2 ? p.accentText : p.text,
-                          border: `1px solid ${
-                            serviceLevel === 2 ? p.accent : p.border
-                          }`,
-                          borderRadius: baseTheme.buttonRadius,
-                        }}
-                      >
-                        Call Waiter to Table {tableNumber}
-                      </button>
-
-                      {serviceLevel === 3 && (
-                        <button
-                          type="button"
-                          disabled={cartSummary.items.length === 0}
-                          onClick={handlePlaceOrder}
-                          className="w-full py-3 px-4 font-semibold text-[14px] cursor-pointer transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                          style={{
-                            backgroundColor: p.accent,
-                            color: p.accentText,
-                            borderRadius: baseTheme.buttonRadius,
-                          }}
-                        >
-                          Place Order · {baseTheme.currencySymbol}
-                          {cartSummary.subtotal.toFixed(2)}
-                        </button>
-                      )}
-                    </div>
                   </div>
-                )}
-              </div>
+                );
+              })}
             </div>
-          </div>
+          )}
 
-          {/* ============================================================== */}
-          {/* RIGHT COLUMN: CONNECTED STAFF, FLOOR & MENU EDITOR SUITE       */}
-          {/* ============================================================== */}
-          {viewLayout === 'split' && (
-            <div className="lg:col-span-7 space-y-6">
-              {/* Staff Console Navigation Bar */}
+          {/* Sleek Floating Bottom Order Pill (Appears only after guest adds an item) */}
+          {serviceLevel >= 2 && cartSummary.totalCount > 0 && (
+            <div className="fixed bottom-5 left-4 right-4 z-40 pointer-events-none">
               <div
-                className="p-4 md:p-5"
                 style={{
-                  backgroundColor: p.surface,
-                  border: `1px solid ${p.border}`,
-                  borderRadius: baseTheme.cardRadius,
+                  backgroundColor: baseTheme.palette.surface,
+                  borderColor: baseTheme.palette.accent,
+                  borderRadius: '999px',
                 }}
+                className="pointer-events-auto max-w-[560px] mx-auto px-6 py-3 border-2 flex items-center justify-between gap-4"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b" style={{ borderColor: p.border }}>
-                  <div>
-                    <div className="text-[12px] font-mono-code" style={{ color: p.muted }}>
-                      CONNECTED FLOOR CONSOLE · {currentVenueName.toUpperCase()}
-                    </div>
-                    <h2
-                      className="text-[24px] font-semibold m-0"
-                      style={{ fontFamily: baseTheme.displayFont }}
-                    >
-                      Live Staff &amp; Owner Screens
-                    </h2>
-                  </div>
-
-                  {/* Staff Screen Selector Tabs */}
-                  <div
-                    className="flex flex-wrap items-center gap-1.5 p-1 rounded-[10px]"
-                    style={{ backgroundColor: p.elevated }}
-                    role="tablist"
-                    aria-label="Staff and owner screens"
-                  >
-                    {(
-                      [
-                        { id: 'kitchen', label: `Kitchen (${tickets.length})` },
-                        { id: 'reception', label: 'Reception' },
-                        {
-                          id: 'waiter',
-                          label: `Waiter Calls (${
-                            waiterCalls.filter((c) => c.status !== 'assisted')
-                              .length
-                          })`,
-                        },
-                        { id: 'floor', label: '12-Table Floor' },
-                        { id: 'editor', label: 'Menu Editor' },
-                      ] as { id: StaffTab; label: string }[]
-                    ).map((tab) => {
-                      const active = staffTab === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={active}
-                          onClick={() => setStaffTab(tab.id)}
-                          className="px-3 py-1.5 text-[13px] font-semibold cursor-pointer transition-colors whitespace-nowrap shrink-0"
-                          style={{
-                            backgroundColor: active ? p.accent : 'transparent',
-                            color: active ? p.accentText : p.text,
-                            borderRadius: baseTheme.buttonRadius,
-                          }}
-                        >
-                          {tab.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-mono-code text-[12px] uppercase tracking-[0.1em]" style={{ color: baseTheme.palette.muted }}>
+                    Table {tableNumber}
+                  </span>
+                  <span className="font-mono-code text-[16px] font-bold tabular-nums">
+                    {cartSummary.totalCount} {cartSummary.totalCount === 1 ? 'dish' : 'dishes'} · {baseTheme.currencySymbol}
+                    {cartSummary.subtotal.toFixed(2)}
+                  </span>
                 </div>
 
-                {/* TAB 1: KITCHEN PASS (KDS) SCREEN */}
-                {staffTab === 'kitchen' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-[13px]" style={{ color: p.muted }}>
-                      <span>
-                        Tap any ticket status button below to advance it and watch the Guest Phone update live.
-                      </span>
-                      <span className="font-mono-code">KDS PASS</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {tickets.map((ticket) => (
-                        <div
-                          key={ticket.ticketNumber}
-                          className="p-4 flex flex-col justify-between gap-4"
-                          style={{
-                            backgroundColor: p.elevated,
-                            border: `1px solid ${
-                              ticket.status === 'ready' ? p.accent : p.border
-                            }`,
-                            borderRadius: baseTheme.cardRadius,
-                          }}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b" style={{ borderColor: p.border }}>
-                              <div>
-                                <span className="font-mono-code text-[18px] font-bold">
-                                  {ticket.ticketNumber}
-                                </span>
-                                <span className="mx-1.5" aria-hidden="true">
-                                  ·
-                                </span>
-                                <span className="text-[16px] font-semibold">
-                                  Table {ticket.tableNumber}
-                                </span>
-                              </div>
-                              <span
-                                className="font-mono-code text-[12px] font-semibold px-2.5 py-1 rounded-[6px]"
-                                style={{
-                                  backgroundColor: p.accent,
-                                  color: p.accentText,
-                                }}
-                              >
-                                {ticket.status.toUpperCase()}
-                              </span>
-                            </div>
-
-                            <ul className="list-none p-0 m-0 space-y-1.5 text-[14px] mb-3">
-                              {ticket.items.map((line, i) => (
-                                <li key={`${line.id}-${i}`}>
-                                  <div className="flex justify-between font-medium">
-                                    <span>
-                                      <strong>{line.qty}×</strong> {line.name}
-                                    </span>
-                                    <span className="font-mono-code tabular-nums">
-                                      {baseTheme.currencySymbol}
-                                      {(line.qty * line.price).toFixed(2)}
-                                    </span>
-                                  </div>
-                                  {line.note && (
-                                    <div
-                                      className="text-[12px] italic mt-0.5"
-                                      style={{ color: p.accent }}
-                                    >
-                                      Note: {line.note}
-                                    </div>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          <div className="space-y-2.5">
-                            {/* 4-step kitchen bar */}
-                            <div className="grid grid-cols-4 gap-1 text-center font-mono-code text-[11px]">
-                              {(['incoming', 'cooking', 'ready', 'served'] as const).map(
-                                (st) => {
-                                  const isCurrent =
-                                    ticket.status === st ||
-                                    (st === 'incoming' &&
-                                      ticket.status === 'confirmed');
-                                  return (
-                                    <div
-                                      key={st}
-                                      className="py-1 rounded-[5px] font-semibold uppercase"
-                                      style={{
-                                        backgroundColor: isCurrent
-                                          ? p.accent
-                                          : p.surface,
-                                        color: isCurrent ? p.accentText : p.muted,
-                                      }}
-                                    >
-                                      {st === 'incoming' ? 'New' : st}
-                                    </div>
-                                  );
-                                }
-                              )}
-                            </div>
-
-                            {ticket.status !== 'served' && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleAdvanceTicket(ticket.ticketNumber)
-                                }
-                                className="w-full py-2.5 px-4 font-semibold text-[13px] cursor-pointer"
-                                style={{
-                                  backgroundColor: p.accent,
-                                  color: p.accentText,
-                                  borderRadius: baseTheme.buttonRadius,
-                                }}
-                              >
-                                {ticket.status === 'incoming' &&
-                                  'Confirm & Start Cooking →'}
-                                {ticket.status === 'confirmed' &&
-                                  'Start Cooking →'}
-                                {ticket.status === 'cooking' &&
-                                  'Mark Order Ready ✓'}
-                                {ticket.status === 'ready' &&
-                                  'Mark Served at Table'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 2: RECEPTION SCREEN */}
-                {staffTab === 'reception' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-[13px]" style={{ color: p.muted }}>
-                      <span>
-                        Incoming table tickets land here with table number and itemized totals.
-                      </span>
-                      <span className="font-mono-code">RECEPTION DESK</span>
-                    </div>
-
-                    <div className="space-y-3">
-                      {tickets.map((ticket) => (
-                        <div
-                          key={ticket.ticketNumber}
-                          className="p-4 flex flex-wrap items-center justify-between gap-4"
-                          style={{
-                            backgroundColor: p.elevated,
-                            border: `1px solid ${p.border}`,
-                            borderRadius: baseTheme.cardRadius,
-                          }}
-                        >
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[18px] font-bold">
-                                Table {ticket.tableNumber}
-                              </span>
-                              <span aria-hidden="true">·</span>
-                              <span className="font-mono-code text-[15px] font-semibold">
-                                {ticket.ticketNumber}
-                              </span>
-                              <span aria-hidden="true">·</span>
-                              <span className="text-[13px]" style={{ color: p.muted }}>
-                                {ticket.createdAt}
-                              </span>
-                            </div>
-                            <div className="text-[13px]" style={{ color: p.muted }}>
-                              {ticket.items
-                                .map((i) => `${i.qty}× ${i.name}`)
-                                .join(', ')}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <div className="text-[11px] font-mono-code" style={{ color: p.muted }}>
-                                TOTAL
-                              </div>
-                              <div className="font-mono-code text-[17px] font-bold tabular-nums">
-                                {baseTheme.currencySymbol}
-                                {ticket.total.toFixed(2)}
-                              </div>
-                            </div>
-
-                            {ticket.status === 'incoming' ? (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleAdvanceTicket(ticket.ticketNumber)
-                                }
-                                className="px-4 py-2 font-semibold text-[13px] cursor-pointer"
-                                style={{
-                                  backgroundColor: p.accent,
-                                  color: p.accentText,
-                                  borderRadius: baseTheme.buttonRadius,
-                                }}
-                              >
-                                Confirm &amp; Route to Kitchen
-                              </button>
-                            ) : (
-                              <span
-                                className="font-mono-code text-[12px] font-semibold px-3 py-1.5 rounded-[8px]"
-                                style={{
-                                  backgroundColor: p.surface,
-                                  border: `1px solid ${p.border}`,
-                                }}
-                              >
-                                {ticket.status.toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 3: WAITER CALL ALERTS */}
-                {staffTab === 'waiter' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-[13px]" style={{ color: p.muted }}>
-                      <span>
-                        When a guest taps "Call Waiter" under their cart, their table number rings here.
-                      </span>
-                      <span className="font-mono-code">WAITER HANDHELD</span>
-                    </div>
-
-                    <div className="space-y-3">
-                      {waiterCalls.map((call) => (
-                        <div
-                          key={call.id}
-                          className="p-4 flex flex-wrap items-center justify-between gap-4"
-                          style={{
-                            backgroundColor: p.elevated,
-                            border: `1px solid ${
-                              call.status === 'calling' ? p.accent : p.border
-                            }`,
-                            borderRadius: baseTheme.cardRadius,
-                          }}
-                        >
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[19px] font-bold">
-                                Table {call.tableNumber}
-                              </span>
-                              <span aria-hidden="true">·</span>
-                              <span className="text-[14px] font-medium">
-                                {call.reason}
-                              </span>
-                            </div>
-                            <div className="text-[13px] font-mono-code" style={{ color: p.muted }}>
-                              {call.cartCount} items in guest cart ({baseTheme.currencySymbol}
-                              {call.cartTotal.toFixed(2)}) · {call.createdAt}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {call.status !== 'assisted' ? (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleAcknowledgeWaiterCall(
-                                    call.id,
-                                    call.tableNumber
-                                  )
-                                }
-                                className="px-4 py-2 font-semibold text-[13px] cursor-pointer"
-                                style={{
-                                  backgroundColor: p.accent,
-                                  color: p.accentText,
-                                  borderRadius: baseTheme.buttonRadius,
-                                }}
-                              >
-                                {call.status === 'calling'
-                                  ? `Walk to Table ${call.tableNumber}`
-                                  : 'Mark Table Assisted ✓'}
-                              </button>
-                            ) : (
-                              <span className="font-mono-code text-[12px]" style={{ color: p.muted }}>
-                                Assisted ✓
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 4: INTERACTIVE 12-TABLE FLOOR MAP */}
-                {staffTab === 'floor' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-[13px]" style={{ color: p.muted }}>
-                      <span>
-                        Click any table on the floor plan to switch the active Guest QR Phone to that table.
-                      </span>
-                      <span className="font-mono-code">12 TABLES · INTERACTIVE</span>
-                    </div>
-
-                    <div
-                      className="rounded-[18px] overflow-hidden p-4"
-                      style={{
-                        backgroundColor: p.floorGround,
-                        border: `1px solid ${p.border}`,
-                      }}
-                    >
-                      <svg
-                        viewBox="0 0 680 460"
-                        className="w-full h-auto block"
-                        role="img"
-                        aria-label={`Interactive 12-table floor map for ${currentVenueName}`}
-                      >
-                        {/* Outer Floor Boundary */}
-                        <rect
-                          x="16"
-                          y="16"
-                          width="648"
-                          height="428"
-                          rx="16"
-                          fill={p.floorGround}
-                          stroke="#F7F2ED"
-                          strokeOpacity="0.2"
-                          strokeWidth="2"
-                        />
-                        {/* Counter */}
-                        <rect
-                          x="45"
-                          y="34"
-                          width="310"
-                          height="50"
-                          rx="8"
-                          fill={p.floorTable}
-                          stroke="#F7F2ED"
-                          strokeOpacity="0.35"
-                        />
-                        <text
-                          x="200"
-                          y="64"
-                          fill="#FBEFE6"
-                          fontFamily="Google Sans Code"
-                          fontSize="13"
-                          fontWeight="700"
-                          textAnchor="middle"
-                        >
-                          COUNTER
-                        </text>
-                        {/* Reception */}
-                        <rect
-                          x="380"
-                          y="34"
-                          width="140"
-                          height="50"
-                          rx="8"
-                          fill={p.floorTable}
-                          stroke="#F7F2ED"
-                          strokeOpacity="0.35"
-                        />
-                        <text
-                          x="450"
-                          y="64"
-                          fill="#FBEFE6"
-                          fontFamily="Google Sans Code"
-                          fontSize="13"
-                          fontWeight="700"
-                          textAnchor="middle"
-                        >
-                          RECEPTION
-                        </text>
-                        {/* Kitchen Pass */}
-                        <rect
-                          x="560"
-                          y="40"
-                          width="84"
-                          height="380"
-                          rx="10"
-                          fill="#4A1D0D"
-                          stroke={p.accent}
-                          strokeWidth="2.5"
-                        />
-                        <text
-                          x="602"
-                          y="230"
-                          fill="#FBEFE6"
-                          fontFamily="Google Sans Code"
-                          fontSize="14"
-                          fontWeight="700"
-                          textAnchor="middle"
-                          transform="rotate(-90 602 230)"
-                        >
-                          KITCHEN PASS
-                        </text>
-
-                        {/* Active Waiter Path & Order Route Lines */}
-                        {targetTableCoord && (
-                          <line
-                            x1="200"
-                            y1="84"
-                            x2={targetTableCoord.x}
-                            y2={targetTableCoord.y}
-                            stroke={p.accent}
-                            strokeWidth="2.5"
-                            strokeDasharray="6 5"
-                          />
-                        )}
-
-                        {/* 12 Interactive Tables */}
-                        {FLOOR_TABLES.map((tbl) => {
-                          const isSelected = tbl.id === tableNumber;
-                          const hasTicket = tickets.some(
-                            (tk) =>
-                              tk.tableNumber === tbl.id &&
-                              tk.status !== 'served'
-                          );
-                          const hasCall = waiterCalls.some(
-                            (wc) =>
-                              wc.tableNumber === tbl.id &&
-                              wc.status !== 'assisted'
-                          );
-
-                          return (
-                            <g
-                              key={tbl.id}
-                              transform={`translate(${tbl.x}, ${tbl.y})`}
-                              onClick={() => setTableNumber(tbl.id)}
-                              className="cursor-pointer"
-                            >
-                              {isSelected && (
-                                <circle
-                                  r="44"
-                                  fill="none"
-                                  stroke={p.accent}
-                                  strokeWidth="2.5"
-                                  strokeOpacity="0.85"
-                                />
-                              )}
-                              {tbl.round ? (
-                                <circle
-                                  r="34"
-                                  fill={
-                                    isSelected || hasTicket || hasCall
-                                      ? p.accent
-                                      : p.floorTable
-                                  }
-                                  stroke="#FBEFE6"
-                                  strokeOpacity={isSelected ? '0.95' : '0.28'}
-                                  strokeWidth="2"
-                                />
-                              ) : (
-                                <rect
-                                  x="-32"
-                                  y="-32"
-                                  width="64"
-                                  height="64"
-                                  rx="10"
-                                  fill={
-                                    isSelected || hasTicket || hasCall
-                                      ? p.accent
-                                      : p.floorTable
-                                  }
-                                  stroke="#FBEFE6"
-                                  strokeOpacity={isSelected ? '0.95' : '0.28'}
-                                  strokeWidth="2"
-                                />
-                              )}
-                              {/* QR Plaque */}
-                              <rect
-                                x="8"
-                                y="8"
-                                width="11"
-                                height="11"
-                                rx="2"
-                                fill="#F7F2ED"
-                              />
-                              <text
-                                y="-2"
-                                fill={
-                                  isSelected || hasTicket || hasCall
-                                    ? p.accentText
-                                    : '#FBEFE6'
-                                }
-                                fontFamily="Google Sans Code"
-                                fontSize="13"
-                                fontWeight="700"
-                                textAnchor="middle"
-                              >
-                                T{tbl.id}
-                              </text>
-                              <text
-                                y="14"
-                                fill={
-                                  isSelected || hasTicket || hasCall
-                                    ? p.accentText
-                                    : '#FBEFE6'
-                                }
-                                fontFamily="Google Sans Code"
-                                fontSize="9"
-                                textAnchor="middle"
-                              >
-                                {hasCall
-                                  ? 'CALL'
-                                  : hasTicket
-                                  ? 'ORDER'
-                                  : 'FREE'}
-                              </text>
-                            </g>
-                          );
-                        })}
-
-                        {/* Waiter Marker */}
-                        {targetTableCoord && (
-                          <g
-                            transform={`translate(${
-                              waiterTargetTable ? targetTableCoord.x - 28 : 200
-                            }, ${
-                              waiterTargetTable ? targetTableCoord.y - 28 : 96
-                            })`}
-                          >
-                            <circle
-                              r="13"
-                              fill="#F7F2ED"
-                              stroke={p.accent}
-                              strokeWidth="3"
-                            />
-                            <text
-                              y="4"
-                              fill="#140905"
-                              fontFamily="Google Sans Code"
-                              fontSize="10"
-                              fontWeight="700"
-                              textAnchor="middle"
-                            >
-                              W1
-                            </text>
-                          </g>
-                        )}
-                      </svg>
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 5: LIVE OWNER MENU EDITOR ("CHANGE A PRICE IN A MINUTE") */}
-                {staffTab === 'editor' && (
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between text-[13px]" style={{ color: p.muted }}>
-                      <span>
-                        Update any price or hide a sold-out dish below. The Guest Phone on the left updates immediately with zero reprints.
-                      </span>
-                      <span className="font-mono-code">OWNER TOOL</span>
-                    </div>
-
-                    {/* Add New Dish Form */}
-                    <form
-                      onSubmit={handleAddCustomDish}
-                      className="p-4 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end"
-                      style={{
-                        backgroundColor: p.elevated,
-                        border: `1px solid ${p.border}`,
-                        borderRadius: baseTheme.cardRadius,
-                      }}
-                    >
-                      <div className="sm:col-span-5">
-                        <label className="block text-[11px] font-mono-code mb-1" style={{ color: p.muted }}>
-                          New Dish Name
-                        </label>
-                        <input
-                          type="text"
-                          value={newDishName}
-                          onChange={(e) => setNewDishName(e.target.value)}
-                          placeholder="e.g. Truffle Fries"
-                          className="w-full px-3 py-2 text-[13px]"
-                          style={{
-                            backgroundColor: p.surface,
-                            color: p.text,
-                            border: `1px solid ${p.border}`,
-                            borderRadius: baseTheme.buttonRadius,
-                          }}
-                        />
-                      </div>
-                      <div className="sm:col-span-3">
-                        <label className="block text-[11px] font-mono-code mb-1" style={{ color: p.muted }}>
-                          Category
-                        </label>
-                        <select
-                          value={newDishCategory}
-                          onChange={(e) => setNewDishCategory(e.target.value)}
-                          className="w-full px-3 py-2 text-[13px]"
-                          style={{
-                            backgroundColor: p.surface,
-                            color: p.text,
-                            border: `1px solid ${p.border}`,
-                            borderRadius: baseTheme.buttonRadius,
-                          }}
-                        >
-                          {baseTheme.categories
-                            .filter((c) => c !== 'All')
-                            .map((cat) => (
-                              <option key={cat} value={cat}>
-                                {cat}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-[11px] font-mono-code mb-1" style={{ color: p.muted }}>
-                          Price ({baseTheme.currencySymbol})
-                        </label>
-                        <input
-                          type="number"
-                          step="0.5"
-                          value={newDishPrice}
-                          onChange={(e) => setNewDishPrice(e.target.value)}
-                          className="w-full px-3 py-2 text-[13px] font-mono-code"
-                          style={{
-                            backgroundColor: p.surface,
-                            color: p.text,
-                            border: `1px solid ${p.border}`,
-                            borderRadius: baseTheme.buttonRadius,
-                          }}
-                        />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <button
-                          type="submit"
-                          className="w-full py-2 px-3 font-semibold text-[13px] cursor-pointer"
-                          style={{
-                            backgroundColor: p.accent,
-                            color: p.accentText,
-                            borderRadius: baseTheme.buttonRadius,
-                          }}
-                        >
-                          + Add Dish
-                        </button>
-                      </div>
-                    </form>
-
-                    {/* Editable Dish Rows */}
-                    <div className="divide-y max-h-[380px] overflow-y-auto" style={{ borderColor: p.border }}>
-                      {currentMenu.map((dish) => (
-                        <div
-                          key={dish.id}
-                          className="py-3 flex flex-wrap items-center justify-between gap-3"
-                          style={{ borderColor: p.border }}
-                        >
-                          <div>
-                            <div className="font-semibold text-[15px]">
-                              {dish.name}
-                            </div>
-                            <div className="text-[12px]" style={{ color: p.muted }}>
-                              {dish.category}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdateDishPrice(
-                                  dish.id,
-                                  Math.max(0.5, dish.price - 0.5)
-                                )
-                              }
-                              className="px-2.5 py-1 font-mono-code text-[12px] font-bold cursor-pointer"
-                              style={{
-                                backgroundColor: p.elevated,
-                                border: `1px solid ${p.border}`,
-                                borderRadius: baseTheme.buttonRadius,
-                              }}
-                            >
-                              -0.50
-                            </button>
-                            <span className="font-mono-code text-[14px] font-bold w-16 text-center tabular-nums">
-                              {baseTheme.currencySymbol}
-                              {dish.price.toFixed(2)}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdateDishPrice(dish.id, dish.price + 0.5)
-                              }
-                              className="px-2.5 py-1 font-mono-code text-[12px] font-bold cursor-pointer"
-                              style={{
-                                backgroundColor: p.elevated,
-                                border: `1px solid ${p.border}`,
-                                borderRadius: baseTheme.buttonRadius,
-                              }}
-                            >
-                              +0.50
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleToggleSoldOut(dish.id)}
-                              className="px-3 py-1 font-mono-code text-[12px] font-semibold cursor-pointer"
-                              style={{
-                                backgroundColor: dish.soldOut
-                                  ? '#C03E0A'
-                                  : p.elevated,
-                                color: dish.soldOut ? '#FFFFFF' : p.text,
-                                border: `1px solid ${p.border}`,
-                                borderRadius: baseTheme.buttonRadius,
-                              }}
-                            >
-                              {dish.soldOut ? 'Sold Out' : 'Available'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                {serviceLevel === 2 ? (
+                  <button
+                    type="button"
+                    onClick={handleCallWaiter}
+                    style={{
+                      backgroundColor: baseTheme.palette.accent,
+                      color: baseTheme.palette.accentText,
+                      borderRadius: '999px',
+                    }}
+                    className="px-5 py-2 font-mono-code text-[12px] font-semibold uppercase tracking-[0.08em] cursor-pointer"
+                  >
+                    Call Waiter →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePlaceOrder}
+                    style={{
+                      backgroundColor: baseTheme.palette.accent,
+                      color: baseTheme.palette.accentText,
+                      borderRadius: '999px',
+                    }}
+                    className="px-5 py-2 font-mono-code text-[12px] font-semibold uppercase tracking-[0.08em] cursor-pointer"
+                  >
+                    Send Order →
+                  </button>
                 )}
               </div>
             </div>
           )}
-        </div>
-      </div>
+        </main>
+      )}
+
+      {/* =====================================================================
+          VIEW 2: INTERACTIVE 3D / 2D TABLE FLOOR STAGE (threeui.com style)
+         ===================================================================== */}
+      {focusView === 'floor' && (
+        <main className="max-w-[1040px] mx-auto px-4 md:px-8 pt-10 md:pt-14 space-y-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p
+                className="font-mono-code text-[11px] uppercase tracking-[0.16em] mb-1"
+                style={{ color: baseTheme.palette.accent }}
+              >
+                SPATIAL FLOOR VIEW · {venueName.toUpperCase()}
+              </p>
+              <h1
+                style={{ fontFamily: baseTheme.displayFont }}
+                className="text-[32px] md:text-[42px] font-bold leading-tight"
+              >
+                Live 12-Table Floor Stage
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {(
+                [
+                  { lvl: 1 as ServiceLevel, label: 'Level 1 · Table 5 QR Zoom' },
+                  { lvl: 2 as ServiceLevel, label: 'Level 2 · Waiter Walking' },
+                  { lvl: 3 as ServiceLevel, label: 'Level 3 · Kitchen Routing' },
+                ] as const
+              ).map((item) => (
+                <button
+                  key={item.lvl}
+                  type="button"
+                  onClick={() => {
+                    setServiceLevel(item.lvl);
+                    setFloorProgress(0.65);
+                  }}
+                  style={{
+                    backgroundColor:
+                      serviceLevel === item.lvl
+                        ? baseTheme.palette.accent
+                        : baseTheme.palette.surface,
+                    color:
+                      serviceLevel === item.lvl
+                        ? baseTheme.palette.accentText
+                        : baseTheme.palette.text,
+                    borderColor: baseTheme.palette.border,
+                    borderRadius: baseTheme.buttonRadius,
+                  }}
+                  className="px-4 py-2 border font-mono-code text-[11px] uppercase tracking-[0.08em] cursor-pointer"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              backgroundColor: '#140905',
+              borderColor: baseTheme.palette.border,
+              borderRadius: baseTheme.cardRadius,
+            }}
+            className="p-6 md:p-8 border space-y-6"
+          >
+            <div className="aspect-[16/10] w-full rounded-[16px] overflow-hidden bg-[#140905]">
+              <Floor2D state={currentFloorState} />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-white/10 text-[#FBEFE6]">
+              <p className="text-[15px] text-[#D8C7B8]">
+                {currentFloorState.caption}
+              </p>
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="floor-step-slider"
+                  className="font-mono-code text-[11px] uppercase tracking-[0.1em] text-[#B89F8D]"
+                >
+                  Scrub Floor Timeline
+                </label>
+                <input
+                  id="floor-step-slider"
+                  type="range"
+                  min={0.1}
+                  max={0.95}
+                  step={0.05}
+                  value={floorProgress}
+                  onChange={(e) => setFloorProgress(Number(e.target.value))}
+                  className="w-36 accent-[#E8500C]"
+                />
+              </div>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* =====================================================================
+          VIEW 3: CLEAN KITCHEN PASS & MENU AVAILABILITY
+         ===================================================================== */}
+      {focusView === 'kitchen' && (
+        <main className="max-w-[960px] mx-auto px-4 md:px-8 pt-10 md:pt-14 space-y-12">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p
+                className="font-mono-code text-[11px] uppercase tracking-[0.16em] mb-1"
+                style={{ color: baseTheme.palette.accent }}
+              >
+                KITCHEN DISPLAY PASS · {venueName.toUpperCase()}
+              </p>
+              <h1
+                style={{ fontFamily: baseTheme.displayFont }}
+                className="text-[32px] md:text-[42px] font-bold leading-tight"
+              >
+                Live Tickets &amp; Dish Availability
+              </h1>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFocusView('guest')}
+              style={{
+                borderColor: baseTheme.palette.border,
+                color: baseTheme.palette.text,
+                borderRadius: baseTheme.buttonRadius,
+              }}
+              className="px-4 py-2 border font-mono-code text-[12px] uppercase tracking-[0.08em] cursor-pointer"
+            >
+              ← Return to Guest Menu
+            </button>
+          </div>
+
+          {/* Active Kitchen Tickets */}
+          <section className="space-y-4">
+            <h2 className="font-mono-code text-[12px] uppercase tracking-[0.14em]" style={{ color: baseTheme.palette.muted }}>
+              Active Table Orders ({tickets.length}) · Waiter Calls ({waiterCalls.length})
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {tickets.map((ticket) => (
+                <div
+                  key={ticket.ticketNumber}
+                  style={{
+                    backgroundColor: baseTheme.palette.surface,
+                    borderColor: baseTheme.palette.border,
+                    borderRadius: baseTheme.cardRadius,
+                  }}
+                  className="p-6 border space-y-5"
+                >
+                  <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: baseTheme.palette.border }}>
+                    <div>
+                      <span className="font-mono-code text-[18px] font-bold tabular-nums">
+                        {ticket.ticketNumber} · Table {ticket.tableNumber}
+                      </span>
+                      <span className="block font-mono-code text-[11px]" style={{ color: baseTheme.palette.muted }}>
+                        {ticket.createdAt}
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        backgroundColor: baseTheme.palette.accent,
+                        color: baseTheme.palette.accentText,
+                        borderRadius: baseTheme.buttonRadius,
+                      }}
+                      className="px-3 py-1 font-mono-code text-[11px] font-semibold uppercase tracking-[0.1em]"
+                    >
+                      {ticket.status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {ticket.items.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between text-[15px]">
+                        <span>
+                          <strong className="font-mono-code tabular-nums">{item.qty}×</strong> {item.name}
+                        </span>
+                        <span className="font-mono-code tabular-nums" style={{ color: baseTheme.palette.muted }}>
+                          {baseTheme.currencySymbol}
+                          {(item.price * item.qty).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAdvanceTicket(ticket.ticketNumber)}
+                    style={{
+                      backgroundColor: baseTheme.palette.accent,
+                      color: baseTheme.palette.accentText,
+                      borderRadius: baseTheme.buttonRadius,
+                    }}
+                    className="w-full py-2.5 font-mono-code text-[12px] font-semibold uppercase tracking-[0.1em] cursor-pointer"
+                  >
+                    {ticket.status === 'served'
+                      ? 'Order Completed ✓'
+                      : `Advance to ${nextTicketStatus(ticket.status).toUpperCase()} →`}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Simple One-Tap Dish Availability Toggle */}
+          <section className="space-y-4">
+            <h2 className="font-mono-code text-[12px] uppercase tracking-[0.14em]" style={{ color: baseTheme.palette.muted }}>
+              Quick Dish Availability (Updates Guest Menu Live)
+            </h2>
+
+            <div
+              style={{
+                backgroundColor: baseTheme.palette.surface,
+                borderColor: baseTheme.palette.border,
+                borderRadius: baseTheme.cardRadius,
+              }}
+              className="divide-y border"
+            >
+              {currentMenu.map((dish) => (
+                <div
+                  key={dish.id}
+                  style={{ borderColor: baseTheme.palette.border }}
+                  className="px-5 py-3.5 flex items-center justify-between gap-4"
+                >
+                  <div>
+                    <span className="font-medium text-[15px]">{dish.name}</span>
+                    <span className="font-mono-code text-[13px] ml-3 tabular-nums" style={{ color: baseTheme.palette.muted }}>
+                      {baseTheme.currencySymbol}
+                      {dish.price.toFixed(2)}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSoldOut(dish.id)}
+                    style={{
+                      borderColor: baseTheme.palette.border,
+                      color: dish.soldOut ? baseTheme.palette.muted : baseTheme.palette.accent,
+                      borderRadius: baseTheme.buttonRadius,
+                    }}
+                    className="px-3.5 py-1.5 border font-mono-code text-[11px] uppercase tracking-[0.08em] cursor-pointer"
+                  >
+                    {dish.soldOut ? 'Sold Out (Tap to Restore)' : 'In Stock'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
+      )}
     </div>
   );
 };

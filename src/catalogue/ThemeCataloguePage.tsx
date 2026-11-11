@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import {
   PRODUCT_THEMES,
-  ProductThemeConfig,
   ServiceLevel,
   ThemeId,
 } from './themeCatalogData';
+import { FlipSection } from '../components/sections/Flip';
 
 interface ThemeCataloguePageProps {
   onInitializeTheme: (config: {
@@ -22,499 +22,283 @@ export const ThemeCataloguePage: React.FC<ThemeCataloguePageProps> = ({
   onOpenBragStudio,
   onOpenIntroSite,
 }) => {
-  const [selectedFilter, setSelectedFilter] = useState<'all' | ThemeId>('all');
-  const [customBrandName, setCustomBrandName] = useState<string>('');
   const [serviceLevel, setServiceLevel] = useState<ServiceLevel>(3);
-  const [initialTable, setInitialTable] = useState<number>(5);
-  const [inspectedThemeId, setInspectedThemeId] = useState<ThemeId | null>(null);
-  const [copiedThemeId, setCopiedThemeId] = useState<ThemeId | null>(null);
 
-  const visibleThemes =
-    selectedFilter === 'all'
-      ? PRODUCT_THEMES
-      : PRODUCT_THEMES.filter((t) => t.id === selectedFilter);
-
-  const handleCopyTokens = (theme: ProductThemeConfig) => {
-    const cssVars = `:root[data-theme="${theme.id}"] {\n  --bg-canvas: ${theme.palette.canvas};\n  --bg-surface: ${theme.palette.surface};\n  --bg-elevated: ${theme.palette.elevated};\n  --text-primary: ${theme.palette.text};\n  --text-muted: ${theme.palette.muted};\n  --accent-primary: ${theme.palette.accent};\n  --border-subtle: ${theme.palette.border};\n  --radius-card: ${theme.cardRadius};\n  --radius-button: ${theme.buttonRadius};\n}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(cssVars).catch(() => {});
+  const scrollToTheme = (id: ThemeId) => {
+    const el = document.getElementById(`catalogue-theme-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-    setCopiedThemeId(theme.id);
-    setTimeout(() => {
-      setCopiedThemeId((prev) => (prev === theme.id ? null : prev));
-    }, 2000);
   };
 
   return (
-    <div className="min-h-screen bg-[#140905] text-[#FBEFE6] selection:bg-[#E8500C] selection:text-[#FBEFE6]">
-      {/* 3-Zone Top Bar Contract */}
-      <header className="sticky top-0 z-40 h-16 px-4 md:px-8 border-b border-[#FBEFE6]/12 bg-[#140905]/95 backdrop-blur-md flex items-center justify-between gap-4">
-        {/* Zone 1: Brand Identity */}
-        <div className="flex items-center gap-3">
-          <span className="w-8 h-8 rounded-[6px] bg-[#E8500C] text-[#FBEFE6] font-display font-bold text-[16px] flex items-center justify-center tracking-wider">
-            BB
-          </span>
-          <div>
-            <span className="font-mono-code text-[12px] uppercase tracking-[0.14em] text-[#FBEFE6] block leading-none">
-              Build Bros · Product OS
-            </span>
-            <span className="font-mono-code text-[11px] text-[#B89F8D] block mt-0.5">
-              4 Live Ordering Themes · Direct Initialization
-            </span>
-          </div>
-        </div>
-
-        {/* Zone 2: Theme Filter Navigation */}
-        <nav
-          aria-label="Theme filter navigation"
-          className="hidden lg:flex items-center gap-1 p-1 rounded-[8px] border border-[#FBEFE6]/12 bg-[#1F0F09]"
+    <div className="min-h-screen bg-[#F7F2ED] text-[#1A0C06] selection:bg-[#E8500C] selection:text-[#FBEFE6]">
+      {/* tasteskill.dev Floating Translucent Pill Nav (3-Zone Contract) */}
+      <div className="sticky top-4 z-50 px-4 md:px-8 pointer-events-none">
+        <header
+          style={{
+            backgroundColor: 'rgba(20, 9, 5, 0.86)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+          className="pointer-events-auto max-w-[1160px] mx-auto h-14 px-4 md:px-6 rounded-[18px] text-[#FBEFE6] flex items-center justify-between gap-4 border border-[#FBEFE6]/12"
         >
-          <button
-            type="button"
-            onClick={() => setSelectedFilter('all')}
-            className={`px-3 py-1.5 rounded-[6px] font-mono-code text-[11px] uppercase tracking-[0.1em] cursor-pointer transition-colors ${
-              selectedFilter === 'all'
-                ? 'bg-[#E8500C] text-[#FBEFE6] font-semibold'
-                : 'text-[#B89F8D] hover:text-[#FBEFE6]'
-            }`}
-          >
-            All 4 Themes
-          </button>
-          {PRODUCT_THEMES.map((theme) => (
-            <button
-              key={theme.id}
-              type="button"
-              onClick={() => setSelectedFilter(theme.id)}
-              className={`px-3 py-1.5 rounded-[6px] font-mono-code text-[11px] uppercase tracking-[0.1em] cursor-pointer transition-colors ${
-                selectedFilter === theme.id
-                  ? 'bg-[#E8500C] text-[#FBEFE6] font-semibold'
-                  : 'text-[#B89F8D] hover:text-[#FBEFE6]'
-              }`}
-            >
-              {theme.indexNumber}. {theme.styleName}
-            </button>
-          ))}
-        </nav>
-
-        {/* Zone 3: Workspace Switcher */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onOpenBragStudio}
-            className="px-3 py-1.5 rounded-[6px] border border-[#FBEFE6]/18 text-[#FBEFE6] hover:border-[#FBEFE6]/40 font-mono-code text-[11px] uppercase tracking-[0.08em] cursor-pointer"
-          >
-            /brag Reel
-          </button>
-          <button
-            type="button"
-            onClick={onOpenIntroSite}
-            className="px-3 py-1.5 rounded-[6px] border border-[#FBEFE6]/18 text-[#B89F8D] hover:text-[#FBEFE6] font-mono-code text-[11px] uppercase tracking-[0.08em] cursor-pointer"
-          >
-            Intro Site
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-[1440px] mx-auto px-4 md:px-8 py-10 md:py-14">
-        {/* Hero Header + Live Initialization Configurator */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12 border-b border-[#FBEFE6]/12 items-end">
-          <div className="lg:col-span-7">
-            <p className="font-mono-code text-[11px] uppercase tracking-[0.16em] text-[#E8500C] mb-3">
-              STANDALONE PRODUCT SUITE · DIRECT INITIALIZATION CATALOGUE
-            </p>
-            <h1 className="font-display text-[clamp(2.5rem,5.5vw,5rem)] uppercase leading-[0.94] tracking-[0.01em] text-[#FBEFE6]">
-              Four Distinct Themes. One Live Ordering Engine.
-            </h1>
-            <p className="font-serif-editorial text-[18px] md:text-[20px] text-[#C6B6AB] mt-4 max-w-[62ch] leading-[1.55]">
-              Every cafe, bistro, burger joint, and wood-fired kitchen has its own atmosphere. Pick any of the four production themes below, set your venue parameters, and initialize the complete Guest Table Phone and Kitchen Pass live in your browser.
-            </p>
+          {/* Zone 1: Brand */}
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-[7px] bg-[#E8500C] text-[#FBEFE6] font-display font-bold text-[14px] flex items-center justify-center tracking-wider">
+              BB
+            </span>
+            <span className="font-semibold text-[15px] tracking-[-0.01em] text-[#FBEFE6]">
+              Build Bros
+            </span>
+            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-[#FBEFE6] text-[#1A0C06] text-[11px] font-semibold">
+              Theme Catalogue
+            </span>
           </div>
 
-          {/* Live Initialization Parameters Box */}
-          <div className="lg:col-span-5 p-5 md:p-6 rounded-[12px] bg-[#1F0F09] border border-[#FBEFE6]/15">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#FBEFE6]/10">
-              <span className="font-mono-code text-[11px] uppercase tracking-[0.14em] text-[#FBEFE6]">
-                Initialization Parameters
-              </span>
-              <span className="font-mono-code text-[11px] text-[#9BE564]">
-                ● Ready to boot
-              </span>
-            </div>
+          {/* Zone 2: 4 Theme Jump Links */}
+          <nav
+            aria-label="Theme jump links"
+            className="hidden lg:flex items-center gap-5 text-[13px] text-[#D8C7B8]"
+          >
+            {PRODUCT_THEMES.map((theme) => (
+              <button
+                key={theme.id}
+                type="button"
+                onClick={() => scrollToTheme(theme.id)}
+                className="hover:text-[#FBEFE6] transition-colors cursor-pointer"
+              >
+                {theme.indexNumber}. {theme.styleName}
+              </button>
+            ))}
+          </nav>
 
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="catalogue-venue-name"
-                  className="block font-mono-code text-[11px] uppercase tracking-[0.1em] text-[#B89F8D] mb-1.5"
-                >
-                  Custom Venue Name (Optional)
-                </label>
-                <input
-                  id="catalogue-venue-name"
-                  type="text"
-                  value={customBrandName}
-                  onChange={(e) => setCustomBrandName(e.target.value)}
-                  placeholder="Leave blank to use theme signature venue..."
-                  className="w-full px-3.5 py-2.5 rounded-[8px] bg-[#140905] border border-[#FBEFE6]/18 text-[#FBEFE6] placeholder:text-[#8E7968] text-[14px] focus:outline-none focus:border-[#E8500C]"
+          {/* Zone 3: Sibling Views */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenBragStudio}
+              className="px-3 py-1.5 rounded-[10px] bg-[#FBEFE6]/10 hover:bg-[#FBEFE6]/18 text-[#FBEFE6] text-[12px] font-medium cursor-pointer transition-colors"
+            >
+              /brag Reel
+            </button>
+            <button
+              type="button"
+              onClick={onOpenIntroSite}
+              className="px-3 py-1.5 rounded-[10px] bg-[#E8500C] text-[#FBEFE6] text-[12px] font-semibold cursor-pointer transition-opacity hover:opacity-90"
+            >
+              Intro Site
+            </button>
+          </div>
+        </header>
+      </div>
+
+      {/* Sunrise-to-Cream Editorial Hero (tasteskill.dev rhythm) */}
+      <section
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(232, 80, 12, 0.14) 0%, rgba(247, 242, 237, 0) 100%)',
+        }}
+        className="pt-14 pb-16 md:pt-20 md:pb-24 px-4 md:px-8"
+      >
+        <div className="max-w-[1040px] mx-auto text-center">
+          <p className="font-mono-code text-[12px] uppercase tracking-[0.14em] text-[#E8500C] mb-4">
+            BUILD BROS · PRODUCT OS CATALOGUE · DEMO
+          </p>
+          <h1 className="font-sans font-bold text-[clamp(2.5rem,6vw,5.25rem)] leading-[1.02] tracking-[-0.04em] text-[#1A0C06] max-w-[18ch] mx-auto">
+            Pick a theme. Run the restaurant live.
+          </h1>
+          <p className="font-serif-editorial text-[18px] md:text-[21px] text-[#5C493E] mt-5 max-w-[54ch] mx-auto leading-[1.55]">
+            Four uncluttered ordering templates crafted for local bistros, coffee roasteries, burger joints, and wood-fired pizzerias. Launch any theme below to try the guest menu, 3D table floor, and kitchen pass.
+          </p>
+
+          {/* Simple 3-Pill Default Level Selector */}
+          <div className="mt-9 inline-flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-[16px] bg-[#EFE6DC] border border-[#1A0C06]/10">
+            {(
+              [
+                { level: 1 as ServiceLevel, label: 'Level 1 · Digital Menu' },
+                { level: 2 as ServiceLevel, label: 'Level 2 · Waiter Call' },
+                { level: 3 as ServiceLevel, label: 'Level 3 · Full Ordering' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.level}
+                type="button"
+                onClick={() => setServiceLevel(opt.level)}
+                className={`px-4 py-2 rounded-[12px] text-[13px] font-medium cursor-pointer transition-colors ${
+                  serviceLevel === opt.level
+                    ? 'bg-[#1A0C06] text-[#FBEFE6] font-semibold'
+                    : 'text-[#5C493E] hover:text-[#1A0C06]'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Spacious Single-Column Stack of 4 Theme Showcases */}
+      <main className="max-w-[1160px] mx-auto px-4 md:px-8 pb-24 space-y-12 md:space-y-16">
+        {PRODUCT_THEMES.map((theme) => (
+          <article
+            key={theme.id}
+            id={`catalogue-theme-${theme.id}`}
+            data-testid={`theme-card-${theme.id}`}
+            style={{
+              backgroundColor: theme.palette.canvas,
+              color: theme.palette.text,
+              borderColor: theme.palette.border,
+            }}
+            className="rounded-[28px] border p-6 md:p-10 lg:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
+          >
+            {/* Left Column: Clean Studio Visual Stage (7 cols) */}
+            <div className="lg:col-span-7">
+              <div
+                className="relative aspect-[16/10] rounded-[20px] overflow-hidden border"
+                style={{ borderColor: theme.palette.border }}
+              >
+                <img
+                  src={theme.heroImage}
+                  alt={`${theme.styleName} — ${theme.defaultVenueName}`}
+                  className="w-full h-full object-cover"
                 />
-              </div>
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(to top, rgba(12, 10, 8, 0.78) 0%, rgba(12, 10, 8, 0.12) 55%, rgba(12, 10, 8, 0.3) 100%)',
+                  }}
+                />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <span className="block font-mono-code text-[11px] uppercase tracking-[0.1em] text-[#B89F8D] mb-1.5">
-                    Service Level
+                {/* Top Index & Vibe */}
+                <div className="absolute top-4 left-5 right-5 flex items-center justify-between text-[#FBEFE6]">
+                  <span className="font-mono-code text-[12px] uppercase tracking-[0.14em] px-3 py-1 rounded-full bg-[#140905]/75 backdrop-blur-sm">
+                    {theme.indexNumber} · {theme.styleName}
                   </span>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {([1, 2, 3] as const).map((lvl) => (
-                      <button
-                        key={lvl}
-                        type="button"
-                        onClick={() => setServiceLevel(lvl)}
-                        className={`py-2 rounded-[6px] font-mono-code text-[12px] font-semibold cursor-pointer border transition-colors ${
-                          serviceLevel === lvl
-                            ? 'bg-[#E8500C] text-[#FBEFE6] border-[#E8500C]'
-                            : 'bg-[#140905] text-[#B89F8D] border-[#FBEFE6]/15 hover:text-[#FBEFE6]'
-                        }`}
-                      >
-                        Lvl {lvl}
-                      </button>
+                  <span className="font-mono-code text-[11px] uppercase tracking-[0.12em] px-3 py-1 rounded-full bg-[#140905]/65 backdrop-blur-sm">
+                    DEMO · Table 5
+                  </span>
+                </div>
+
+                {/* Bottom Palette Dots & Venue Subtitle */}
+                <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between gap-4 text-[#FBEFE6]">
+                  <div>
+                    <p className="font-mono-code text-[11px] uppercase tracking-[0.14em] text-[#E6D5C3]">
+                      {theme.venueSubtitle}
+                    </p>
+                    <p
+                      style={{ fontFamily: theme.displayFont }}
+                      className="text-[28px] md:text-[34px] font-bold leading-tight mt-0.5"
+                    >
+                      {theme.defaultVenueName}
+                    </p>
+                  </div>
+
+                  {/* 4 Quiet Palette Dots */}
+                  <div className="flex items-center gap-1.5 bg-[#140905]/70 px-3 py-2 rounded-full">
+                    {[
+                      theme.palette.canvas,
+                      theme.palette.surface,
+                      theme.palette.text,
+                      theme.palette.accent,
+                    ].map((hex, i) => (
+                      <span
+                        key={i}
+                        title={hex}
+                        style={{ backgroundColor: hex }}
+                        className="w-4 h-4 rounded-full border border-white/25 block"
+                      />
                     ))}
                   </div>
                 </div>
-
-                <div>
-                  <label
-                    htmlFor="catalogue-table-select"
-                    className="block font-mono-code text-[11px] uppercase tracking-[0.1em] text-[#B89F8D] mb-1.5"
-                  >
-                    Active Table (1–12)
-                  </label>
-                  <select
-                    id="catalogue-table-select"
-                    value={initialTable}
-                    onChange={(e) => setInitialTable(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-[6px] bg-[#140905] border border-[#FBEFE6]/18 text-[#FBEFE6] font-mono-code text-[13px] focus:outline-none focus:border-[#E8500C]"
-                  >
-                    {Array.from({ length: 12 }, (_, idx) => idx + 1).map((num) => (
-                      <option key={num} value={num}>
-                        Table {num}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* Mobile Filter Bar */}
-        <div className="flex lg:hidden items-center gap-2 overflow-x-auto py-4 border-b border-[#FBEFE6]/10">
-          <button
-            type="button"
-            onClick={() => setSelectedFilter('all')}
-            className={`px-3 py-1.5 rounded-[6px] font-mono-code text-[11px] uppercase tracking-[0.1em] whitespace-nowrap cursor-pointer ${
-              selectedFilter === 'all'
-                ? 'bg-[#E8500C] text-[#FBEFE6]'
-                : 'bg-[#1F0F09] text-[#B89F8D]'
-            }`}
-          >
-            All 4 Themes
-          </button>
-          {PRODUCT_THEMES.map((theme) => (
-            <button
-              key={theme.id}
-              type="button"
-              onClick={() => setSelectedFilter(theme.id)}
-              className={`px-3 py-1.5 rounded-[6px] font-mono-code text-[11px] uppercase tracking-[0.1em] whitespace-nowrap cursor-pointer ${
-                selectedFilter === theme.id
-                  ? 'bg-[#E8500C] text-[#FBEFE6]'
-                  : 'bg-[#1F0F09] text-[#B89F8D]'
-              }`}
-            >
-              {theme.indexNumber}. {theme.styleName}
-            </button>
-          ))}
-        </div>
+            {/* Right Column: Spacious Editorial Summary + 3 Sample Dishes + Launch CTA (5 cols) */}
+            <div className="lg:col-span-5 flex flex-col justify-between space-y-7">
+              <div>
+                <span
+                  className="font-mono-code text-[11px] uppercase tracking-[0.16em] block mb-2"
+                  style={{ color: theme.palette.accent }}
+                >
+                  THEME {theme.indexNumber} · {theme.styleName.toUpperCase()}
+                </span>
+                <h2
+                  style={{ fontFamily: theme.displayFont }}
+                  className="text-[32px] md:text-[40px] leading-[1.04] font-bold"
+                >
+                  {theme.defaultVenueName}
+                </h2>
+                <p
+                  className="text-[16px] leading-[1.6] mt-3"
+                  style={{ color: theme.palette.muted }}
+                >
+                  {theme.tagline}
+                </p>
+              </div>
 
-        {/* 4-Theme Showcase Grid */}
-        <section
-          aria-label="Product Themes Catalogue"
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10"
-        >
-          {visibleThemes.map((theme) => {
-            const isInspected = inspectedThemeId === theme.id;
-            const effectiveVenueName = customBrandName.trim() || theme.defaultVenueName;
-
-            return (
-              <article
-                key={theme.id}
-                data-testid={`theme-card-${theme.id}`}
-                style={{
-                  backgroundColor: theme.palette.canvas,
-                  color: theme.palette.text,
-                  borderColor: theme.palette.border,
-                  borderRadius: theme.cardRadius,
-                  fontFamily: theme.bodyFont,
-                }}
-                className="border overflow-hidden flex flex-col justify-between transition-colors"
+              {/* Clean 3-Dish Tasting Preview (Zero Clutter) */}
+              <div
+                className="border-t border-b divide-y"
+                style={{ borderColor: theme.palette.border }}
               >
-                {/* Top Editorial Visual Header */}
-                <div>
+                {theme.menu.slice(0, 3).map((dish) => (
                   <div
-                    className="relative h-64 md:h-72 overflow-hidden border-b"
+                    key={dish.id}
+                    className="py-3.5 flex items-baseline justify-between gap-4"
                     style={{ borderColor: theme.palette.border }}
                   >
-                    <img
-                      src={theme.heroImage}
-                      alt={`${theme.styleName} — ${theme.defaultVenueName}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background:
-                          theme.palette.mode === 'dark'
-                            ? 'linear-gradient(to top, rgba(10,10,12,0.92) 8%, rgba(10,10,12,0.25) 60%, rgba(10,10,12,0.4) 100%)'
-                            : 'linear-gradient(to top, rgba(20,14,10,0.82) 8%, rgba(20,14,10,0.18) 60%, rgba(20,14,10,0.3) 100%)',
-                      }}
-                    />
-
-                    {/* Top Metadata Line (Unboxed typographic row) */}
-                    <div className="absolute top-4 left-5 right-5 flex items-center justify-between text-[#FBEFE6]">
-                      <span className="font-mono-code text-[11px] uppercase tracking-[0.16em]">
-                        {theme.indexNumber} · {theme.styleName}
-                      </span>
-                      <span className="font-mono-code text-[11px] uppercase tracking-[0.12em] text-[#E6DDD6]">
-                        {theme.venueSubtitle}
-                      </span>
-                    </div>
-
-                    {/* Bottom Venue Title inside Hero */}
-                    <div className="absolute bottom-4 left-5 right-5 text-[#FBEFE6]">
-                      <p className="font-mono-code text-[11px] uppercase tracking-[0.14em] text-[#E8D5B5] mb-1">
-                        {theme.tagline} · Table {initialTable} · Level {serviceLevel}
-                      </p>
-                      <h2
-                        style={{ fontFamily: theme.displayFont }}
-                        className="text-[30px] md:text-[36px] leading-[1.02] font-bold"
-                      >
-                        {effectiveVenueName}
-                      </h2>
-                    </div>
-                  </div>
-
-                  {/* Theme Body Copy & Design System Spec */}
-                  <div className="p-6 md:p-7 space-y-6">
-                    <div>
-                      <p
-                        className="text-[15px] md:text-[16px] leading-[1.55]"
-                        style={{ color: theme.palette.muted }}
-                      >
-                        {theme.description}
-                      </p>
-                    </div>
-
-                    {/* Palette & Typography Spec Strip */}
-                    <div
-                      className="p-4 border grid grid-cols-1 sm:grid-cols-2 gap-4"
-                      style={{
-                        backgroundColor: theme.palette.surface,
-                        borderColor: theme.palette.border,
-                        borderRadius: theme.buttonRadius,
-                      }}
+                    <span className="text-[15px] font-medium">
+                      {dish.name}
+                    </span>
+                    <span
+                      className="font-mono-code text-[14px] font-semibold tabular-nums shrink-0"
+                      style={{ color: theme.palette.accent }}
                     >
-                      <div>
-                        <span
-                          className="block font-mono-code text-[10px] uppercase tracking-[0.14em] mb-2"
-                          style={{ color: theme.palette.muted }}
-                        >
-                          60-30-10 Token Swatches
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {[
-                            { label: 'Canvas', hex: theme.palette.canvas },
-                            { label: 'Surface', hex: theme.palette.surface },
-                            { label: 'Elevated', hex: theme.palette.elevated },
-                            { label: 'Text', hex: theme.palette.text },
-                            { label: 'Accent', hex: theme.palette.accent },
-                          ].map((swatch) => (
-                            <div
-                              key={swatch.label}
-                              className="flex items-center gap-1.5"
-                              title={`${swatch.label}: ${swatch.hex}`}
-                            >
-                              <span
-                                className="w-6 h-6 border block"
-                                style={{
-                                  backgroundColor: swatch.hex,
-                                  borderColor: theme.palette.border,
-                                  borderRadius: '4px',
-                                }}
-                              />
-                            </div>
-                          ))}
-                          <span
-                            className="font-mono-code text-[11px] ml-1 tabular-nums"
-                            style={{ color: theme.palette.muted }}
-                          >
-                            {theme.palette.accent}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <span
-                          className="block font-mono-code text-[10px] uppercase tracking-[0.14em] mb-1.5"
-                          style={{ color: theme.palette.muted }}
-                        >
-                          Typographic Voice &amp; Radius
-                        </span>
-                        <p
-                          className="font-mono-code text-[11px] leading-[1.45] truncate"
-                          style={{ color: theme.palette.text }}
-                        >
-                          {theme.displayFont.split(',')[0].replace(/"/g, '')} +{' '}
-                          {theme.bodyFont.split(',')[0].replace(/"/g, '')}
-                        </p>
-                        <p
-                          className="font-mono-code text-[11px] mt-0.5"
-                          style={{ color: theme.palette.muted }}
-                        >
-                          Card Radius: {theme.cardRadius} · Mode: {theme.palette.mode.toUpperCase()}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Sample Menu Preview (3 Signature Dishes) */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5 gap-2">
-                        <span
-                          className="font-mono-code text-[10px] uppercase tracking-[0.14em]"
-                          style={{ color: theme.palette.muted }}
-                        >
-                          Sample Menu ({theme.menu.length} Dishes Preloaded)
-                        </span>
-                        <span
-                          className="font-mono-code text-[11px] truncate"
-                          style={{ color: theme.palette.accent }}
-                        >
-                          {theme.categories.filter((c) => c !== 'All').join(' · ')}
-                        </span>
-                      </div>
-
-                      <div
-                        className="divide-y border"
-                        style={{
-                          backgroundColor: theme.palette.surface,
-                          borderColor: theme.palette.border,
-                          borderRadius: theme.buttonRadius,
-                        }}
-                      >
-                        {theme.menu.slice(0, isInspected ? theme.menu.length : 3).map((dish) => (
-                          <div
-                            key={dish.id}
-                            className="px-4 py-3 flex items-baseline justify-between gap-4"
-                            style={{ borderColor: theme.palette.border }}
-                          >
-                            <div>
-                              <span
-                                className="font-medium text-[14px]"
-                                style={{ color: theme.palette.text }}
-                              >
-                                {dish.name}
-                              </span>
-                              <span
-                                className="font-mono-code text-[11px] ml-2"
-                                style={{ color: theme.palette.muted }}
-                              >
-                                {dish.category} · {dish.prepMinutes}m
-                              </span>
-                              {isInspected && (
-                                <p
-                                  className="text-[13px] mt-0.5"
-                                  style={{ color: theme.palette.muted }}
-                                >
-                                  {dish.description}
-                                </p>
-                              )}
-                            </div>
-                            <span
-                              className="font-mono-code text-[14px] font-semibold tabular-nums shrink-0"
-                              style={{ color: theme.palette.accent }}
-                            >
-                              {theme.currencySymbol}
-                              {dish.price.toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                      {theme.currencySymbol}
+                      {dish.price.toFixed(2)}
+                    </span>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                {/* Action Footer: Direct Theme Initialization */}
-                <div
-                  className="px-6 py-4 border-t flex flex-wrap items-center justify-between gap-3"
+              {/* Single Uncluttered Primary Action */}
+              <div className="pt-1 flex flex-wrap items-center justify-between gap-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onInitializeTheme({
+                      themeId: theme.id,
+                      customBrandName: theme.defaultVenueName,
+                      serviceLevel,
+                      initialTable: 5,
+                    })
+                  }
                   style={{
-                    backgroundColor: theme.palette.surface,
-                    borderColor: theme.palette.border,
+                    backgroundColor: theme.palette.accent,
+                    color: theme.palette.accentText,
+                    borderRadius: theme.buttonRadius,
                   }}
+                  className="w-full sm:w-auto px-7 py-3.5 font-mono-code text-[13px] font-semibold uppercase tracking-[0.1em] cursor-pointer transition-opacity hover:opacity-90"
                 >
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setInspectedThemeId((prev) => (prev === theme.id ? null : theme.id))
-                      }
-                      style={{
-                        borderColor: theme.palette.border,
-                        color: theme.palette.text,
-                        borderRadius: theme.buttonRadius,
-                      }}
-                      className="px-3.5 py-2 border font-mono-code text-[11px] uppercase tracking-[0.08em] cursor-pointer"
-                    >
-                      {isInspected ? 'Hide Full Menu' : `Inspect All ${theme.menu.length} Dishes`}
-                    </button>
+                  Launch {theme.styleName} →
+                </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleCopyTokens(theme)}
-                      style={{
-                        borderColor: theme.palette.border,
-                        color: theme.palette.muted,
-                        borderRadius: theme.buttonRadius,
-                      }}
-                      className="px-3 py-2 border font-mono-code text-[11px] uppercase tracking-[0.08em] cursor-pointer"
-                    >
-                      {copiedThemeId === theme.id ? 'Tokens Copied ✓' : 'Copy CSS Tokens'}
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onInitializeTheme({
-                        themeId: theme.id,
-                        customBrandName: customBrandName.trim(),
-                        serviceLevel,
-                        initialTable,
-                      })
-                    }
-                    style={{
-                      backgroundColor: theme.palette.accent,
-                      color: theme.palette.accentText,
-                      borderRadius: theme.buttonRadius,
-                    }}
-                    className="px-5 py-2.5 font-mono-code text-[12px] font-semibold uppercase tracking-[0.1em] cursor-pointer transition-opacity hover:opacity-90"
-                  >
-                    Initialize {theme.styleName} Live →
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </section>
+                <span
+                  className="font-mono-code text-[11px] uppercase tracking-[0.1em]"
+                  style={{ color: theme.palette.muted }}
+                >
+                  {theme.menu.length} Dishes · Level {serviceLevel}
+                </span>
+              </div>
+            </div>
+          </article>
+        ))}
       </main>
+
+      {/* tasteskill.dev Full-Bleed 3-Layer Closing Colour Flip */}
+      <FlipSection />
     </div>
   );
 };

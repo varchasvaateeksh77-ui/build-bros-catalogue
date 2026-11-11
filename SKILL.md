@@ -84,7 +84,28 @@ Use this skill as the default source of truth for **Varchasva Ateeksh (`varchasv
 
 ---
 
-## 5. Communication & Workflow Preferences
+## 5. Mandatory Pre-Build Spec Files (Always Create First)
+
+Before writing or refactoring any project, always create and maintain these root specification files so the architecture and rules are explicit:
+1. `PRD.md` — Product scope, anti-clutter philosophy, reference sources, and non-negotiables.
+2. `structure.md` — Route map, single-focus view hierarchy, and repository file tree.
+3. `design.md` — Colour tokens, typography scale, whitespace rules, and the 30-item release gate.
+4. `theme.md` — Distinct palette, typography, and layout structure for each product theme.
+5. `animation.md` — GSAP ScrollTrigger rules, 3D/2D floor camera states, and reduced-motion fallbacks.
+6. `content.md` — Every word of copy, menus, and `[FILL]` / `[CONFIRM]` slots.
+7. `phases.md` — Step-by-step build phases and verification gates.
+
+---
+
+## 6. Template & Product UI Anti-Clutter Rules
+
+- **Never Cram Multiple Screens Side-by-Side**: Never squeeze a Guest Phone, Kitchen KDS, Reception Screen, and 12-Table Map onto one congested split screen. Use a clean floating pill switcher (`Guest Menu` · `3D Floor` · `Kitchen Pass`) so each view gets 100% breathing room.
+- **Distinct Layout Per Theme**: Each theme must have its own layout personality (e.g., centered tasting menu for *Classy Elegant*, 2-column architectural hairline grid for *Minimalist*, bold poster cards for *Street Style*, warm courtyard cards for *Artisanal Terracotta*).
+- **3 Data Points Max Per Dish Card**: Dish Title + short 1-line description, Price (`tabular-nums`), and a single `+ Add` control.
+
+---
+
+## 7. Communication & Workflow Preferences
 
 - **Do Not Ask Unnecessary Questions**: Make sensible engineering decisions, build the real working implementation, and list any assumptions at the end.
 - **Concise Status Replies (Max 12 Lines)**:
@@ -92,3 +113,4 @@ Use this skill as the default source of truth for **Varchasva Ateeksh (`varchasv
   - Assumptions you made.
   - What needs a real fact (`[FILL]` items still empty).
   - Anything you could not do and why.
+
